@@ -1,0 +1,17 @@
+# Global Configuration
+global:
+    # Scrape Interval
+    scrape_interval: 5s
+
+    # Evaluation Interval
+    evaluation_interval: 5s
+
+# Scrape Configurations
+scrape_configs:
+    # Aggregated Trace Metrics Job
+    - job_name: aggregated-trace-metrics
+
+      # Static Configurations
+      static_configs:
+          # Targets
+          - targets: ["otel-collector-service:8889"]

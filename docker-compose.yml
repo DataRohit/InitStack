@@ -1,0 +1,436 @@
+volumes:
+    nginx-data:
+        name: nginx-data
+        driver: local
+    mailpit-data:
+        name: mailpit-data
+        driver: local
+    prometheus-data:
+        name: prometheus-data
+        driver: local
+    redis-data:
+        name: redis-data
+        driver: local
+    rabbitmq-data:
+        name: rabbitmq-data
+        driver: local
+    minio-data:
+        name: minio-data
+        driver: local
+    pgadmin-data:
+        name: pgadmin-data
+        driver: local
+    postgres-data:
+        name: postgres-data
+        driver: local
+    postgres-backups:
+        name: postgres-backups
+        driver: local
+    sonarqube_temp:
+        name: sonarqube_temp
+        driver: local
+    sonarqube_data:
+        name: sonarqube_data
+        driver: local
+    sonarqube_logs:
+        name: sonarqube_logs
+        driver: local
+    sonarqube_extensions:
+        name: sonarqube_extensions
+        driver: local
+
+services:
+    nginx-service:
+        build:
+            context: .
+            dockerfile: ./compose/nginx/dockerfile
+        image: nginx-service:latest
+        container_name: nginx-service
+        ports:
+            - "8080:8080"
+        volumes:
+            - nginx-data:/var/lib/nginx
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8080/health/"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+        depends_on:
+            django-service:
+                condition: service_healthy
+            minio-service:
+                condition: service_healthy
+
+    django-service:
+        build:
+            context: .
+            dockerfile: ./compose/django/dockerfile
+        entrypoint: /app/compose/django/entrypoint
+        command: /app/compose/django/start
+        image: django-service:latest
+        container_name: django-service
+        env_file:
+            - ./.envs/django/.env
+            - ./.envs/postgres/.env
+        volumes:
+            - .:/app:z
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:8000/health/"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+        depends_on:
+            celery-worker-service:
+                condition: service_started
+            celery-beat-service:
+                condition: service_started
+            mailpit-service:
+                condition: service_healthy
+            jaeger-query-service:
+                condition: service_healthy
+            prometheus-service:
+                condition: service_healthy
+            elasticsearch-service:
+                condition: service_healthy
+            redis-service:
+                condition: service_healthy
+            rabbitmq-service:
+                condition: service_healthy
+            minio-service:
+                condition: service_healthy
+            postgres-service:
+                condition: service_healthy
+
+    celery-flower-service:
+        build:
+            context: .
+            dockerfile: ./compose/celery-flower/dockerfile
+        image: celery-flower-service:latest
+        container_name: celery-flower-service
+        ports:
+            - "5555:5555"
+        env_file:
+            - ./.envs/django/.env
+            - ./.envs/postgres/.env
+            - ./.envs/celery-flower/.env
+        volumes:
+            - .:/app:z
+        networks:
+            - initstack
+        restart: unless-stopped
+        depends_on:
+            celery-worker-service:
+                condition: service_started
+            celery-beat-service:
+                condition: service_started
+            rabbitmq-service:
+                condition: service_healthy
+            elasticsearch-service:
+                condition: service_healthy
+
+    celery-worker-service:
+        build:
+            context: .
+            dockerfile: ./compose/celery-worker/dockerfile
+        image: celery-worker-service:latest
+        container_name: celery-worker-service
+        env_file:
+            - ./.envs/django/.env
+            - ./.envs/postgres/.env
+        volumes:
+            - .:/app:z
+        networks:
+            - initstack
+        restart: unless-stopped
+        depends_on:
+            rabbitmq-service:
+                condition: service_healthy
+            elasticsearch-service:
+                condition: service_healthy
+
+    celery-beat-service:
+        build:
+            context: .
+            dockerfile: ./compose/celery-beat/dockerfile
+        image: celery-beat-service:latest
+        container_name: celery-beat-service
+        env_file:
+            - ./.envs/django/.env
+            - ./.envs/postgres/.env
+        volumes:
+            - .:/app:z
+        networks:
+            - initstack
+        restart: unless-stopped
+        depends_on:
+            rabbitmq-service:
+                condition: service_healthy
+            elasticsearch-service:
+                condition: service_healthy
+
+    mailpit-service:
+        image: axllent/mailpit:latest
+        container_name: mailpit-service
+        env_file:
+            - ./.envs/mailpit/.env
+        ports:
+            - "8025:8025"
+        volumes:
+            - mailpit-data:/data
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--spider",
+                    "http://localhost:8025/api/v1/messages",
+                ]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+
+    otel-collector-service:
+        image: otel/opentelemetry-collector-contrib:latest
+        container_name: otel-collector-service
+        command:
+            - "--config=/conf/config.yaml"
+        volumes:
+            - ./compose/otel-collector/config.yaml:/conf/config.yaml:ro
+        networks:
+            - initstack
+        restart: unless-stopped
+        depends_on:
+            jaeger-collector-service:
+                condition: service_started
+
+    jaeger-query-service:
+        image: jaegertracing/jaeger-query:latest
+        container_name: jaeger-query-service
+        command:
+            - "--es.password=${JAEGER_ES_PASSWORD}"
+            - "--es.server-urls=${JAEGER_ES_SERVER_URLS}"
+            - "--metrics-backend=${METRICS_STORAGE_TYPE}"
+            - "--prometheus.server-url=${PROMETHEUS_SERVER_URL}"
+            - "--prometheus.query.normalize-duration=true"
+            - "--prometheus.query.normalize-calls=true"
+        env_file:
+            - ./.envs/jaeger/.env
+        ports:
+            - "16686:16686"
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:16686"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+        depends_on:
+            jaeger-collector-service:
+                condition: service_started
+
+    jaeger-collector-service:
+        image: jaegertracing/jaeger-collector:latest
+        container_name: jaeger-collector-service
+        command:
+            - "--es.password=${JAEGER_ES_PASSWORD}"
+            - "--es.server-urls=${JAEGER_ES_SERVER_URLS}"
+            - "--metrics-backend=${METRICS_STORAGE_TYPE}"
+            - "--collector.otlp.enabled=true"
+        env_file:
+            - ./.envs/jaeger/.env
+        networks:
+            - initstack
+        restart: unless-stopped
+        depends_on:
+            prometheus-service:
+                condition: service_healthy
+            elasticsearch-service:
+                condition: service_healthy
+
+    prometheus-service:
+        image: prom/prometheus:latest
+        container_name: prometheus-service
+        ports:
+            - "9090:9090"
+        volumes:
+            - prometheus-data:/prometheus
+            - ./compose/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+
+    kibana-service:
+        image: bitnami/kibana:7.17.26
+        container_name: kibana-service
+        ports:
+            - "5601:5601"
+        env_file:
+            - ./.envs/kibana/.env
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:5601"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+        depends_on:
+            elasticsearch-service:
+                condition: service_healthy
+
+    elasticsearch-service:
+        image: bitnami/elasticsearch:7.17.26
+        container_name: elasticsearch-service
+        env_file:
+            - ./.envs/elasticsearch/.env
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9200/_cat/health"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+
+    redis-service:
+        image: redis/redis-stack:latest
+        container_name: redis-service
+        ports:
+            - "8001:8001"
+        env_file:
+            - ./.envs/redis/.env
+        volumes:
+            - redis-data:/data
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "redis-cli", "ping"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+
+    rabbitmq-service:
+        image: rabbitmq:management
+        container_name: rabbitmq-service
+        ports:
+            - "15672:15672"
+        env_file:
+            - ./.envs/rabbitmq/.env
+        volumes:
+            - rabbitmq-data:/var/lib/rabbitmq
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+
+    minio-service:
+        image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+        container_name: minio-service
+        command: server /data --console-address ":9080"
+        ports:
+            - "9080:9080"
+        env_file:
+            - ./.envs/minio/.env
+        volumes:
+            - minio-data:/data
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test:
+                ["CMD", "curl", "-f", "http://localhost:9080/minio/health/live"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+
+    pgadmin-service:
+        image: dpage/pgadmin4:latest
+        container_name: pgadmin-service
+        ports:
+            - "5050:80"
+        env_file:
+            - ./.envs/pgadmin/.env
+        volumes:
+            - pgadmin-data:/var/lib/pgadmin
+        networks:
+            - initstack
+        restart: unless-stopped
+        depends_on:
+            postgres-service:
+                condition: service_healthy
+
+    postgres-service:
+        build:
+            context: .
+            dockerfile: ./compose/postgres/dockerfile
+        image: postgres-service:latest
+        container_name: postgres-service
+        env_file:
+            - ./.envs/postgres/.env
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+            - postgres-backups:/backups
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+            start_period: 10s
+
+    sonarqube-service:
+        image: sonarqube:latest
+        container_name: sonarqube-service
+        ports:
+            - "9000:9000"
+        volumes:
+            - sonarqube_temp:/opt/sonarqube/temp
+            - sonarqube_data:/opt/sonarqube/data
+            - sonarqube_logs:/opt/sonarqube/logs
+            - sonarqube_extensions:/opt/sonarqube/extensions
+        networks:
+            - initstack
+        restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9000"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
+
+networks:
+    initstack:
+        name: initstack
+        driver: bridge

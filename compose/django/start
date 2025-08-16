@@ -1,0 +1,20 @@
+#!/bin/bash
+
+# Exit On Error
+set -o errexit
+# Fail On Pipe Failure
+set -o pipefail
+# Fail On Undefined Variables
+set -o nounset
+
+# Make Migrations
+python manage.py makemigrations
+
+# Migrate Database
+python manage.py migrate
+
+# Collect Static Files
+python manage.py collectstatic --noinput
+
+# Run Uvicorn
+exec uvicorn config.asgi:application --host 0.0.0.0 --reload

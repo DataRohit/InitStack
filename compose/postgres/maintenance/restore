@@ -1,0 +1,77 @@
+#!/usr/bin/env bash
+
+### Restore Database From A Backup
+###
+### Parameters
+###     <1> Filename Of An Existing Backup
+###
+### Usage
+###     $ docker compose -f <environment>.yml (exec |run --rm) postgres restore <1>
+
+# Exit On Error
+set -o errexit
+# Fail On Pipe Failure
+set -o pipefail
+# Fail On Undefined Variables
+set -o nounset
+
+# Get Working Directory
+working_dir="$(dirname ${0})"
+# Source Constants And Messages
+source "${working_dir}/_sourced/constants.sh"
+source "${working_dir}/_sourced/messages.sh"
+
+# Validate Required Parameter: Backup Filename
+if [[ -z ${1+x} ]]; then
+    # Error Message
+    message_error "Backup Filename Is Not Specified Yet It Is A Required Parameter"
+
+    # Exit With Error
+    exit 1
+fi
+
+# Resolve Backup Filename Path
+backup_filename="${BACKUP_DIR_PATH}/${1}"
+
+# Ensure Backup File Exists
+if [[ ! -f "${backup_filename}" ]]; then
+    # Error Message
+    message_error "No Backup With The Specified Filename Found"
+
+    # Exit With Error
+    exit 1
+fi
+
+# Welcome Message
+message_welcome "Restoring The '${POSTGRES_DB}' Database From The '${backup_filename}' Backup..."
+
+# Disallow Restoring As Superuser 'postgres'
+if [[ "${POSTGRES_USER}" == "postgres" ]]; then
+    # Error Message
+    message_error "Restoring As 'postgres' User Is Not Supported"
+
+    # Exit With Error
+    exit 1
+fi
+
+# Export PostgreSQL Environment Variables
+export PGHOST="${POSTGRES_HOST}"
+export PGPORT="${POSTGRES_PORT}"
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+export PGDATABASE="${POSTGRES_DB}"
+
+# Drop Existing Database
+message_info "Dropping The Database..."
+dropdb "${PGDATABASE}"
+
+# Create Fresh Database Owned By Application User
+message_info "Creating A New Database..."
+createdb --owner="${POSTGRES_USER}"
+
+# Restore From The Provided Compressed Backup File
+message_info "Applying The Backup To The New Database..."
+gunzip -c "${backup_filename}" | psql "${POSTGRES_DB}"
+
+# Success Message
+message_success "The '${POSTGRES_DB}' Database Has Been Restored From The '${backup_filename}' Backup."

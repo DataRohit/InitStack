@@ -1,0 +1,68 @@
+# EditorConfig Settings
+root = true
+
+# Default Settings
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+indent_style = space
+indent_size = 4
+
+# Python Files
+[*.{py,rst,ini}]
+indent_style = space
+indent_size = 4
+
+# Web Markup Files
+[*.{html,xml}]
+indent_style = space
+indent_size = 4
+
+# Stylesheet Files
+[*.{css,scss,less}]
+indent_style = space
+indent_size = 4
+
+# JSON, YAML, And TOML Files
+[*.{json,yml,yaml,toml}]
+indent_style = space
+indent_size = 4
+
+# JavaScript And TypeScript Files
+[*.{js,jsx,ts,tsx}]
+indent_style = space
+indent_size = 4
+
+# Markdown Files
+[*.md]
+trim_trailing_whitespace = false
+
+# Build Files
+[Makefile,makefile]
+indent_style = tab
+tab_width = 4
+
+# Configuration Files
+[default.conf]
+indent_style = space
+indent_size = 4
+
+# Shell And Docker Files
+[*.{sh,bash}]
+indent_style = space
+indent_size = 4
+[Dockerfile*]
+indent_style = space
+indent_size = 4
+
+# Windows Scripts
+[*.{bat,cmd,ps1}]
+indent_style = space
+indent_size = 4
+
+# Editor And Meta Files
+[.editorconfig]
+indent_style = space
+indent_size = 4

@@ -1,0 +1,57 @@
+#!/bin/bash
+
+# Exit On Error
+set -o errexit
+# Fail On Pipe Failure
+set -o pipefail
+# Fail On Undefined Variables
+set -o nounset
+
+# Set Celery Broker URL
+export CELERY_BROKER_URL="${RABBITMQ_URL}"
+
+# If POSTGRES_USER Is Unset
+if [ -z "${POSTGRES_USER}" ]; then
+    # Set POSTGRES_USER To 'postgres'
+    base_postgres_image_default_user='postgres'
+
+    # Export POSTGRES_USER
+    export POSTGRES_USER="${base_postgres_image_default_user}"
+fi
+
+# Set The DATABASE_URL Environment Variable For Connecting To PostgreSQL
+export DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}"
+
+# Use A Python Script To Wait For PostgreSQL To Become Available
+python << END
+import sys
+import time
+
+import psycopg
+
+suggest_unrecoverable_after = 30
+start = time.time()
+
+while True:
+    try:
+        psycopg.connect(
+            dbname="${POSTGRES_DB}",
+            user="${POSTGRES_USER}",
+            password="${POSTGRES_PASSWORD}",
+            host="${POSTGRES_HOST}",
+            port="${POSTGRES_PORT}",
+        )
+        break
+
+    except psycopg.OperationalError as error:
+        sys.stderr.write("Waiting For PostgreSQL To Become Available...\n")
+        if time.time() - start > suggest_unrecoverable_after:
+            sys.stderr.write(f"  The Following Exception May Be Indicative Of An Unrecoverable Error: '{error}'\n")
+
+    time.sleep(1)
+
+sys.stderr.write('PostgreSQL Is Available\n')
+END
+
+# Execute The Command Provided As Arguments To The Script
+exec "$@"

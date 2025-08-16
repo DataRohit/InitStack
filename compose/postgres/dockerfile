@@ -1,0 +1,12 @@
+# Use Official PostgreSQL Image
+FROM docker.io/postgres:17
+
+# Copy Maintenance Scripts
+COPY ./compose/postgres/maintenance /usr/local/bin/maintenance
+
+# Make Maintenance Scripts Executable
+RUN chmod +x /usr/local/bin/maintenance/*
+
+# Move Maintenance Scripts to /usr/local/bin
+RUN mv /usr/local/bin/maintenance/* /usr/local/bin \
+    && rmdir /usr/local/bin/maintenance

@@ -1,0 +1,48 @@
+#!/usr/bin/env bash
+
+### Create A Database Backup
+###
+### Usage:
+###     $ docker compose -f <environment>.yml (exec |run --rm) postgres backup
+
+# Exit On Error
+set -o errexit
+# Fail On Pipe Failure
+set -o pipefail
+# Fail On Undefined Variables
+set -o nounset
+
+# Get Working Directory
+working_dir="$(dirname ${0})"
+
+# Source Constants and Messages
+source "${working_dir}/_sourced/constants.sh"
+source "${working_dir}/_sourced/messages.sh"
+
+# Welcome Message
+message_welcome "Backing Up The '${POSTGRES_DB}' Database..."
+
+# If POSTGRES_USER Is 'postgres'
+if [[ "${POSTGRES_USER}" == "postgres" ]]; then
+    # Error Message
+    message_error "Backing Up As 'postgres' User Is Not Supported"
+
+    # Exit With Error
+    exit 1
+fi
+
+# Export PostgreSQL Environment Variables
+export PGHOST="${POSTGRES_HOST}"
+export PGPORT="${POSTGRES_PORT}"
+export PGUSER="${POSTGRES_USER}"
+export PGPASSWORD="${POSTGRES_PASSWORD}"
+export PGDATABASE="${POSTGRES_DB}"
+
+# Backup Filename
+backup_filename="${BACKUP_FILE_PREFIX}_$(date +'%Y_%m_%dT%H_%M_%S').sql.gz"
+
+# Backup Command
+pg_dump | gzip > "${BACKUP_DIR_PATH}/${backup_filename}"
+
+# Success Message
+message_success "'${POSTGRES_DB}' Database Backup '${backup_filename}' Has Been Created And Placed In '${BACKUP_DIR_PATH}'"

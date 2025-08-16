@@ -1,0 +1,53 @@
+#!/usr/bin/env bash
+
+### Remove A Database Backup
+###
+### Parameters
+###     <1> Filename Of A Backup To Remove
+###
+### Usage
+###     $ docker compose -f <environment>.yml (exec |run --rm) postgres rmbackup <1>
+
+# Exit On Error
+set -o errexit
+# Fail On Pipe Failure
+set -o pipefail
+# Fail On Undefined Variables
+set -o nounset
+
+# Get Working Directory
+working_dir="$(dirname ${0})"
+
+# Source Constants And Messages
+source "${working_dir}/_sourced/constants.sh"
+source "${working_dir}/_sourced/messages.sh"
+
+# Validate Required Parameter: Backup Filename
+if [[ -z ${1+x} ]]; then
+    # Error Message
+    message_error "Backup Filename Is Not Specified Yet It Is A Required Parameter. Make Sure You Provide One And Try Again."
+
+    # Exit With Error
+    exit 1
+fi
+
+# Resolve Backup Filename Path
+backup_filename="${BACKUP_DIR_PATH}/${1}"
+
+# Ensure Backup File Exists
+if [[ ! -f "${backup_filename}" ]]; then
+    # Error Message
+    message_error "No Backup With The Specified Filename Found. Check Out The 'backups' Maintenance Script Output To See If There Is One And Try Again."
+
+    # Exit With Error
+    exit 1
+fi
+
+# Welcome Message
+message_welcome "Removing The '${backup_filename}' Backup File..."
+
+# Remove Backup File Safely (No Recursion)
+rm -f "${backup_filename}"
+
+# Success Message
+message_success "The '${backup_filename}' Database Backup Has Been Removed."

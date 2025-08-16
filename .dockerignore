@@ -1,0 +1,75 @@
+# Development Files
+.editorconfig
+.gitattributes
+
+# Project Metadata And VCS
+.git
+.github
+.gitignore
+.gitlab-ci.yml
+
+# CI And Docs Config
+.travis.yml
+.readthedocs.yml
+.pre-commit-config.yaml
+
+# IDE And Editor Settings
+.idea
+.vscode/
+
+# Python Virtual Environments
+.venv
+venv
+.Python
+
+# Environment And Secrets
+.envs/
+*.env
+
+# Python Caches And Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Testing And Coverage
+.pytest_cache/
+.tox/
+.nox/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+
+# Linters And Tool Caches
+.ruff_cache/
+.mypy_cache/
+.cache/
+
+# Build And Distribution Artifacts
+build/
+dist/
+*.egg-info/
+pip-wheel-metadata/
+
+# Logs And Temp Files
+*.log
+logs/
+tmp/
+temp/
+
+# Local Databases And Runtime
+*.sqlite3
+
+# Frontend Dependencies And Builds
+node_modules/
+.parcel-cache/
+.next/
+.nuxt/
+.vite/
+.turbo/
+out/
+
+# System Files
+.DS_Store
+Thumbs.db

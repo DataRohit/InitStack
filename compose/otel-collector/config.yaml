@@ -1,0 +1,65 @@
+# Receivers
+receivers:
+    # OpenTelemetry Protocol (OTLP)
+    otlp:
+        # Protocols
+        protocols:
+            # gRPC Protocol
+            grpc:
+                # gRPC Endpoint
+                endpoint: "0.0.0.0:4317"
+
+            # HTTP Protocol
+            http:
+                # HTTP Endpoint
+                endpoint: "0.0.0.0:4318"
+
+# Exporters
+exporters:
+    # OpenTelemetry Protocol (OTLP)
+    otlp:
+        # Jaeger Collector Service Endpoint
+        endpoint: jaeger-collector-service:4317
+
+        # TLS Configuration
+        tls:
+            # Insecure TLS
+            insecure: true
+
+    # Prometheus Exporter
+    prometheus:
+        # Prometheus Endpoint
+        endpoint: "0.0.0.0:8889"
+
+# Connectors
+connectors:
+    # Span Metrics Connector
+    spanmetrics:
+
+# Processors
+processors:
+    # Batch Processor
+    batch:
+
+# Service
+service:
+    # Pipelines
+    pipelines:
+        # Traces Pipeline
+        traces:
+            # Receivers
+            receivers: [otlp]
+
+            # Processors
+            processors: [batch]
+
+            # Exporters
+            exporters: [spanmetrics, otlp]
+
+        # Metrics Pipeline
+        metrics/spanmetrics:
+            # Receivers
+            receivers: [spanmetrics]
+
+            # Exporters
+            exporters: [prometheus]
