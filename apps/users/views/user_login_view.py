@@ -138,8 +138,10 @@ class UserLoginView(APIView):
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            # Build Cache Keys
+            # Build User ID String
             user_id_str: str = str(user.id)
+
+            # Build Cache Keys
             access_key: str = f"access_token_{user_id_str}"
             refresh_key: str = f"refresh_token_{user_id_str}"
 

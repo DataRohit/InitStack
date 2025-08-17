@@ -16,6 +16,7 @@ from apps.users.views import UserMeView
 from apps.users.views import UserReactivateConfirmView
 from apps.users.views import UserReactivateRequestView
 from apps.users.views import UserRegisterView
+from apps.users.views import UserReLoginView
 from apps.users.views import UserResetPasswordConfirmView
 from apps.users.views import UserResetPasswordRequestView
 from apps.users.views import UserUsernameChangeConfirmView
@@ -40,6 +41,11 @@ urlpatterns: list[URLResolver | URLPattern] = [
         route="login/",
         view=UserLoginView.as_view(),
         name="login",
+    ),
+    path(
+        route="re-login/",
+        view=UserReLoginView.as_view(),
+        name="re_login",
     ),
     path(
         route="change-username/request/",

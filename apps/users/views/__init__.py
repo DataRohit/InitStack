@@ -8,6 +8,7 @@ from apps.users.views.user_email_change_confirm_view import UserEmailChangeConfi
 from apps.users.views.user_email_change_request_view import UserEmailChangeRequestView
 from apps.users.views.user_login_view import UserLoginView
 from apps.users.views.user_me_view import UserMeView
+from apps.users.views.user_re_login_view import UserReLoginView
 from apps.users.views.user_reactivate_confirm_view import UserReactivateConfirmView
 from apps.users.views.user_reactivate_request_view import UserReactivateRequestView
 from apps.users.views.user_register_view import UserRegisterView
@@ -27,6 +28,7 @@ __all__: list[str] = [
     "UserEmailChangeRequestView",
     "UserLoginView",
     "UserMeView",
+    "UserReLoginView",
     "UserReactivateConfirmView",
     "UserReactivateRequestView",
     "UserRegisterView",

@@ -25,6 +25,9 @@ from apps.users.serializers.user_login_serializer import UserLoginResponseSerial
 from apps.users.serializers.user_login_serializer import UserLoginUnauthorizedErrorResponseSerializer
 from apps.users.serializers.user_me_serializer import UserMeResponseSerializer
 from apps.users.serializers.user_me_serializer import UserMeUnauthorizedErrorResponseSerializer
+from apps.users.serializers.user_re_login_serializer import UserReLoginBadRequestErrorResponseSerializer
+from apps.users.serializers.user_re_login_serializer import UserReLoginPayloadSerializer
+from apps.users.serializers.user_re_login_serializer import UserReLoginUnauthorizedErrorResponseSerializer
 from apps.users.serializers.user_reactivate_serializer import UserReactivateBadRequestErrorResponseSerializer
 from apps.users.serializers.user_reactivate_serializer import UserReactivateConfirmResponseSerializer
 from apps.users.serializers.user_reactivate_serializer import UserReactivateConfirmUnauthorizedErrorResponseSerializer
@@ -84,6 +87,9 @@ __all__: list[str] = [
     "UserLoginUnauthorizedErrorResponseSerializer",
     "UserMeResponseSerializer",
     "UserMeUnauthorizedErrorResponseSerializer",
+    "UserReLoginBadRequestErrorResponseSerializer",
+    "UserReLoginPayloadSerializer",
+    "UserReLoginUnauthorizedErrorResponseSerializer",
     "UserReactivateBadRequestErrorResponseSerializer",
     "UserReactivateConfirmResponseSerializer",
     "UserReactivateConfirmUnauthorizedErrorResponseSerializer",
@@ -97,7 +103,6 @@ __all__: list[str] = [
     "UserResetPasswordConfirmUnauthorizedErrorResponseSerializer",
     "UserResetPasswordRequestAcceptedResponseSerializer",
     "UserResetPasswordRequestBadRequestErrorResponseSerializer",
-    "UserResetPasswordRequestPayloadSerializer",
     "UserResetPasswordRequestPayloadSerializer",
     "UserUsernameChangeConfirmBadRequestErrorResponseSerialzier",
     "UserUsernameChangeConfirmResponseSerializer",
