@@ -29,10 +29,10 @@ from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
 from apps.users.serializers import UserDetailSerializer
-from apps.users.serializers import UserUsernameChangeBadRequestErrorResponseSerialzier
-from apps.users.serializers import UserUsernameChangePayloadSerializer
-from apps.users.serializers import UserUsernameChangeResponseSerializer
-from apps.users.serializers import UserUsernameUnauthorizedErrorResponseSerializer
+from apps.users.serializers import UserEmailChangeBadRequestErrorResponseSerializer
+from apps.users.serializers import UserEmailChangePayloadSerializer
+from apps.users.serializers import UserEmailChangeResponseSerializer
+from apps.users.serializers import UserEmailUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -41,10 +41,10 @@ logger = logging.getLogger(__name__)
 User: User = get_user_model()
 
 
-# User Username Change Confirm View Class
-class UserUsernameChangeConfirmView(APIView):
+# User Email Change Confirm View Class
+class UserEmailChangeConfirmView(APIView):
     """
-    User Username Change Confirm API View Class.
+    User Email Change Confirm API View Class.
 
     Attributes:
         renderer_classes (ClassVar[list[JSONRenderer]]): List Of Response Renderers.
@@ -59,35 +59,35 @@ class UserUsernameChangeConfirmView(APIView):
     authentication_classes: ClassVar[list[BaseAuthentication]] = []
     permission_classes: ClassVar[list[BasePermission]] = [AllowAny]
     http_method_names: ClassVar[list[str]] = ["put"]
-    object_label: ClassVar[str] = "user_username_change_confirm"
+    object_label: ClassVar[str] = "user_email_change_confirm"
 
-    # Get Method For Username Change Confirmation
+    # Put Method For Email Change Confirmation
     @extend_schema(
-        operation_id="User Username Change Confirm",
-        request=UserUsernameChangePayloadSerializer,
+        operation_id="User Email Change Confirm",
+        request=UserEmailChangePayloadSerializer,
         responses={
-            status.HTTP_200_OK: UserUsernameChangeResponseSerializer,
-            status.HTTP_400_BAD_REQUEST: UserUsernameChangeBadRequestErrorResponseSerialzier,
-            status.HTTP_401_UNAUTHORIZED: UserUsernameUnauthorizedErrorResponseSerializer,
+            status.HTTP_200_OK: UserEmailChangeResponseSerializer,
+            status.HTTP_400_BAD_REQUEST: UserEmailChangeBadRequestErrorResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: UserEmailUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
-        description="Confirm Username Change Using Token And Update Username",
-        summary="Confirm Username Change",
+        description="Confirm Email Change Using Token And Update Email",
+        summary="Confirm Email Change",
         tags=["User"],
     )
     def put(self, request: Request, token: str) -> Response:
         """
-        Process Username Change Confirmation.
+        Process Email Change Confirmation.
 
         Args:
             request (Request): HTTP Request Object.
-            token (str): Username Change Token From URL.
+            token (str): Email Change Token From URL.
 
         Returns:
             Response: HTTP Response With Updated User Data Or Error Messages.
 
         Raises:
-            Exception: For Any Unexpected Errors During Username Change Confirmation.
+            Exception: For Any Unexpected Errors During Email Change Confirmation.
         """
 
         try:
@@ -95,10 +95,9 @@ class UserUsernameChangeConfirmView(APIView):
             token_cache: BaseCache = caches["token_cache"]
 
             try:
-                # Decode Token
                 payload: dict[str, Any] = jwt.decode(
                     jwt=token,
-                    key=settings.CHANGE_USERNAME_TOKEN_SECRET,
+                    key=settings.CHANGE_EMAIL_TOKEN_SECRET,
                     algorithms=["HS256"],
                     options={
                         "verify_signature": True,
@@ -113,7 +112,7 @@ class UserUsernameChangeConfirmView(APIView):
             except jwt.InvalidTokenError:
                 # Return Unauthorized Response
                 return Response(
-                    data={"error": "Invalid Username Change Token"},
+                    data={"error": "Invalid Email Change Token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
@@ -121,24 +120,24 @@ class UserUsernameChangeConfirmView(APIView):
             user_id: str = payload.get("sub")
 
             # Get Cached Token
-            cached_token: str | None = token_cache.get(f"change_username_token_{user_id}")
+            cached_token: str | None = token_cache.get(f"change_email_token_{user_id}")
 
             # If Token Does Not Match
             if not cached_token or cached_token != token:
                 # Return Unauthorized Response
                 return Response(
-                    data={"error": "Invalid Or Expired Username Change Token"},
+                    data={"error": "Invalid Or Expired Email Change Token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            # Validate Username Payload From Query Params
+            # Validate Email Payload From Query Params
             payload_data: dict[str, str] = {
-                "username": request.data.get("username"),
-                "re_username": request.data.get("re_username"),
+                "email": request.data.get("email"),
+                "re_email": request.data.get("re_email"),
             }
 
             # Initialize Payload Serializer
-            serializer: UserUsernameChangePayloadSerializer = UserUsernameChangePayloadSerializer(data=payload_data)
+            serializer: UserEmailChangePayloadSerializer = UserEmailChangePayloadSerializer(data=payload_data)
 
             # If Data Is Invalid
             if not serializer.is_valid():
@@ -148,33 +147,37 @@ class UserUsernameChangeConfirmView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
-            # Extract New Username
-            new_username: str = serializer.validated_data.get("username")
+            # Extract New Email
+            new_email: str = serializer.validated_data.get("email")
 
-            # Check Username Availability
-            exists: bool = User.objects.filter(username__iexact=new_username).exists()
+            # Check Email Availability
+            exists: bool = User.objects.filter(email__iexact=new_email).exists()
 
-            # If Username Already Exists
+            # If Email Already Exists
             if exists:
                 # Return Bad Request Response
                 return Response(
-                    data={"errors": {"username": ["Username Already Exists"]}},
+                    data={"errors": {"email": ["Email Already Exists"]}},
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
             # Get User
             user: User = User.objects.get(id=user_id)
 
-            # Update Username
-            user.username = new_username
-            user.save(update_fields=["username"])
+            # Update Email
+            user.email = new_email
+            user.save(update_fields=["email"])
 
-            # Revoke Change Username Token
-            token_cache.delete(f"change_username_token_{user_id}")
+            # Revoke Change Email Token
+            token_cache.delete(f"change_email_token_{user_id}")
 
             # Revoke Access & Refresh Tokens
             token_cache.delete(f"access_token_{user_id}")
             token_cache.delete(f"refresh_token_{user_id}")
+
+            # Deactivate User
+            user.is_active = False
+            user.save(update_fields=["is_active"])
 
             # Get Current Time
             now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
@@ -185,28 +188,47 @@ class UserUsernameChangeConfirmView(APIView):
             # Determine Protocol (HTTP/HTTPS)
             protocol: str = "https" if request.is_secure() else "http"
 
-            # Generate Login Link
-            login_link: str = f"{protocol}://{current_site.domain}/login/"
+            # Generate Activation Token
+            activation_token: str = jwt.encode(
+                payload={
+                    "sub": str(user.id),
+                    "iss": slugify(settings.PROJECT_NAME),
+                    "aud": slugify(settings.PROJECT_NAME),
+                    "iat": now_dt,
+                    "exp": now_dt + datetime.timedelta(seconds=settings.ACTIVATION_TOKEN_EXPIRY),
+                },
+                key=settings.ACTIVATION_TOKEN_SECRET,
+                algorithm="HS256",
+            )
 
-            # Load Success Email Template
-            success_email_template: str = render_to_string(
-                template_name="users/user_username_change_success.html",
+            # Cache Activation Token
+            token_cache.set(
+                key=f"activation_token_{user.id}",
+                value=activation_token,
+                timeout=settings.ACTIVATION_TOKEN_EXPIRY,
+            )
+
+            # Generate Activation Link
+            activation_link: str = f"{protocol}://{current_site.domain}/api/users/activate/{activation_token}/"
+
+            # Load Activation Email Template
+            activation_email_template: str = render_to_string(
+                template_name="users/user_registered_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,
-                    "username": user.username,
                     "email": user.email,
-                    "login_link": login_link,
+                    "activation_link": activation_link,
                     "current_year": now_dt.year,
                     "project_name": settings.PROJECT_NAME,
                 },
             )
 
-            # Send Success Email
+            # Send Activation Email
             send_mail(
-                subject=f"Your {settings.PROJECT_NAME} Username Was Updated",
+                subject=f"Re-Activate Your {settings.PROJECT_NAME} Account",
                 message="",
-                html_message=success_email_template,
+                html_message=activation_email_template,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
             )
@@ -235,4 +257,4 @@ class UserUsernameChangeConfirmView(APIView):
 
 
 # Exports
-__all__: list[str] = ["UserUsernameChangeConfirmView"]
+__all__: list[str] = ["UserEmailChangeConfirmView"]

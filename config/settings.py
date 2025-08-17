@@ -831,3 +831,15 @@ CHANGE_USERNAME_TOKEN_EXPIRY: int = env.int(
     var="CHANGE_USERNAME_TOKEN_EXPIRY",
     default=1800,
 )
+
+# Set The JWT Change Email Token Secret
+CHANGE_EMAIL_TOKEN_SECRET: str = env.str(
+    var="CHANGE_EMAIL_TOKEN_SECRET",
+    default="49800ffbb7957074bfe0bd90acbf8b70c7d68cb7074a5e3a1f15008caf728c5e",
+)
+
+# Set The JWT Change Email Token Expiry
+CHANGE_EMAIL_TOKEN_EXPIRY: int = env.int(
+    var="CHANGE_EMAIL_TOKEN_EXPIRY",
+    default=1800,
+)

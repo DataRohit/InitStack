@@ -5,6 +5,8 @@ from django.urls.resolvers import URLResolver
 
 # Local Imports
 from apps.users.views import UserActivateView
+from apps.users.views import UserEmailChangeConfirmView
+from apps.users.views import UserEmailChangeRequestView
 from apps.users.views import UserLoginView
 from apps.users.views import UserRegisterView
 from apps.users.views import UserUsernameChangeConfirmView
@@ -39,5 +41,15 @@ urlpatterns: list[URLResolver | URLPattern] = [
         route="change-username/confirm/<str:token>/",
         view=UserUsernameChangeConfirmView.as_view(),
         name="change_username_confirm",
+    ),
+    path(
+        route="change-email/request/",
+        view=UserEmailChangeRequestView.as_view(),
+        name="change_email_request",
+    ),
+    path(
+        route="change-email/confirm/<str:token>/",
+        view=UserEmailChangeConfirmView.as_view(),
+        name="change_email_confirm",
     ),
 ]
