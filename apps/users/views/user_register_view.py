@@ -94,7 +94,7 @@ class UserRegisterView(APIView):
             # Validate Request Data
             serializer: UserRegisterPayloadSerializer = UserRegisterPayloadSerializer(data=request.data)
 
-            # Check If Data Is Valid
+            # If Data Is Valid
             if serializer.is_valid():
                 # Create New User
                 user: User = serializer.save()

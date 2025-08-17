@@ -113,7 +113,7 @@ class UserActivateView(APIView):
                 # Get Cached Token
                 cached_token: str | None = token_cache.get(f"activation_token_{user_id}")
 
-                # Check Token Match
+                # If Token Does Not Match
                 if not cached_token or cached_token != token:
                     # Return Unauthorized Response
                     return Response(

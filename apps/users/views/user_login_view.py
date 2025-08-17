@@ -94,7 +94,7 @@ class UserLoginView(APIView):
             # Validate Request Data
             serializer: UserLoginPayloadSerializer = UserLoginPayloadSerializer(data=request.data)
 
-            # Check If Data Is Valid
+            # If Data Is Invalid
             if not serializer.is_valid():
                 # Return Validation Error Response
                 return Response(
@@ -130,7 +130,7 @@ class UserLoginView(APIView):
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
-            # Verify Password
+            # If Password Is Invalid
             if not user.check_password(password):
                 # Return Unauthorized Response
                 return Response(
@@ -191,7 +191,7 @@ class UserLoginView(APIView):
                 # Return True If Token Is Valid
                 return True
 
-            # Validate Or Generate Access Token
+            # If Access Token Is Invalid
             if not _is_token_valid(cached_access_token, settings.ACCESS_TOKEN_SECRET):
                 # Build Access Token Payload
                 access_payload: dict[str, Any] = {
@@ -215,7 +215,7 @@ class UserLoginView(APIView):
                 # Update Cached Access Token
                 cached_access_token = new_access_token
 
-            # Validate Or Generate Refresh Token
+            # If Refresh Token Is Invalid
             if not _is_token_valid(cached_refresh_token, settings.REFRESH_TOKEN_SECRET):
                 # Build Refresh Token Payload
                 refresh_payload: dict[str, Any] = {

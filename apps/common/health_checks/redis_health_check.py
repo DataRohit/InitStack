@@ -56,7 +56,7 @@ class RedisHealthCheck(BaseHealthCheckBackend):
                 socket_timeout=3,
             )
 
-            # Check If Redis Responds To Ping
+            # If Redis Is Not Responding
             if client.ping() is not True:
                 # Set The Error Message
                 error_message: str = "Redis Did Not Respond To PING"

@@ -62,7 +62,7 @@ class GenericJSONRenderer(JSONRenderer):
         # Get Response Object From Renderer Context
         response: Any = renderer_context.get("response")
 
-        # Validate Response Object Exists
+        # If Response Object Is Not Found
         if not response:
             # Raise A Validation Error
             raise ValueError(

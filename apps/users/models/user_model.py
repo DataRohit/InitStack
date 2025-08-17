@@ -179,22 +179,22 @@ class User(AbstractUser, TimeStampedModel):
             None
         """
 
-        # Format First Name To Title Case
+        # If First Name Is Not Empty
         if self.first_name:
             # Apply Title Case
             self.first_name: str = self.first_name.title().strip()
 
-        # Format Last Name To Title Case
+        # If Last Name Is Not Empty
         if self.last_name:
             # Apply Title Case
             self.last_name: str = self.last_name.title().strip()
 
-        # Format Username To Lowercase
+        # If Username Is Not Empty
         if self.username:
             # Apply Lowercase
             self.username: str = self.username.lower().strip()
 
-        # Format Email To Lowercase
+        # If Email Is Not Empty
         if self.email:
             # Apply Lowercase
             self.email: str = self.email.lower().strip()

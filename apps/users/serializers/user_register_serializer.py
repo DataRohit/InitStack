@@ -243,7 +243,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
             serializers.ValidationError: If Passwords Do Not Match.
         """
 
-        # Check If Username Already Exists
+        # If Username Already Exists
         if User.objects.filter(username=attrs["username"]).exists():
             # Raise Validation Error
             raise serializers.ValidationError(
@@ -251,7 +251,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
                 code=status.HTTP_400_BAD_REQUEST,
             ) from None
 
-        # Check If Email Already Exists
+        # If Email Already Exists
         if User.objects.filter(email=attrs["email"]).exists():
             # Raise Validation Error
             raise serializers.ValidationError(
@@ -259,7 +259,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
                 code=status.HTTP_400_BAD_REQUEST,
             ) from None
 
-        # Check Password Match
+        # If Passwords Do Not Match
         if attrs["password"] != attrs["re_password"]:
             # Raise Validation Error
             raise serializers.ValidationError(

@@ -43,7 +43,8 @@ class UserManager(DjangoUserManager["User"]):
         Raises:
             ValueError: If Email Is Not Provided.
         """
-        # Check Email Provided
+
+        # If Email Is Not Provided
         if not email:
             # Set Error Message
             error_message: str = "Email Must Be Set"
@@ -117,7 +118,7 @@ class UserManager(DjangoUserManager["User"]):
         extra_fields.setdefault("is_staff", True)
         extra_fields.setdefault("is_superuser", True)
 
-        # Check Staff Flag
+        # If is_staff Is Not True
         if extra_fields.get("is_staff") is not True:
             # Set Error Message
             error_message: str = "Invalid is_staff Flag"
@@ -125,7 +126,7 @@ class UserManager(DjangoUserManager["User"]):
             # Raise ValueError
             raise ValueError(error_message) from None
 
-        # Check Superuser Flag
+        # If is_superuser Is Not True
         if extra_fields.get("is_superuser") is not True:
             # Set Error Message
             error_message: str = "Invalid is_superuser Flag"

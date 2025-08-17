@@ -370,7 +370,7 @@ class TestUserManager:
                 User: Created User Instance.
             """
 
-            # Check If Using Is In Extra Fields
+            # If Using Is In Extra Fields
             if "using" in extra_fields:
                 # Store DB Used
                 db_used[0] = extra_fields.pop("using")

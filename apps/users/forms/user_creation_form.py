@@ -67,7 +67,7 @@ class UserCreationForm(admin_forms.UserCreationForm):
         # Convert Email To Lowercase
         email = email.lower().strip()
 
-        # Check If Email Already Exists
+        # If Email Already Exists
         if User.objects.filter(email=email).exists():
             # Raise Validation Error
             raise forms.ValidationError(
@@ -95,7 +95,7 @@ class UserCreationForm(admin_forms.UserCreationForm):
         # Convert Username To Lowercase
         username = username.lower().strip()
 
-        # Check If Username Already Exists
+        # If Username Already Exists
         if User.objects.filter(username=username).exists():
             # Raise Validation Error
             raise forms.ValidationError(
