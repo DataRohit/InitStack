@@ -331,6 +331,19 @@ class UserResetPasswordConfirmResponseSerializer(GenericResponseSerializer):
             response_only=True,
             status_codes=[status.HTTP_400_BAD_REQUEST],
         ),
+        OpenApiExample(
+            name="User Not Active",
+            value={
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "errors": {
+                    "identifier": ["Account Is Not Active"],
+                },
+            },
+            summary="User Not Active",
+            description="Error Response When User Account Is Not Active",
+            response_only=True,
+            status_codes=[status.HTTP_400_BAD_REQUEST],
+        ),
     ],
 )
 class UserResetPasswordRequestBadRequestErrorResponseSerializer(GenericResponseSerializer):

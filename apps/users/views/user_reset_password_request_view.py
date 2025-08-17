@@ -128,6 +128,14 @@ class UserResetPasswordRequestView(APIView):
                     status=status.HTTP_400_BAD_REQUEST,
                 )
 
+            # If User Not Active
+            if not user.is_active:
+                # Return Bad Request Response
+                return Response(
+                    data={"errors": {"identifier": ["Account Is Not Active"]}},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
             # Build User ID String
             user_id_str: str = str(user.id)
 
