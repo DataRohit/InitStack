@@ -5,12 +5,14 @@ from django.contrib import admin
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from django.urls import include
 from django.urls import path
+from django.urls.resolvers import URLPattern
+from django.urls.resolvers import URLResolver
 from drf_spectacular.views import SpectacularAPIView
 from drf_spectacular.views import SpectacularRedocView
 from drf_spectacular.views import SpectacularSwaggerView
 
 # Admin & Media URLs
-urlpatterns: list[path] = [
+urlpatterns: list[URLPattern | URLResolver] = [
     path(
         route=settings.ADMIN_URL,
         view=admin.site.urls,

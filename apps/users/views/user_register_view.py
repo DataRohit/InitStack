@@ -27,10 +27,10 @@ from rest_framework.views import APIView
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
+from apps.users.serializers import UserCreateErrorResponseSerializer
+from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserRegisterPayloadSerializer
-from apps.users.serializers.base_serializer import UserDetailSerializer
-from apps.users.serializers.user_register_serializer import UserCreateErrorResponseSerializer
-from apps.users.serializers.user_register_serializer import UserRegisterResponseSerializer
+from apps.users.serializers import UserRegisterResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -95,7 +95,7 @@ class UserRegisterView(APIView):
                 # Create New User
                 user: User = serializer.save()
 
-                # Serialzier User Data
+                # Serializer User Data
                 user_data: dict[str, Any] = UserDetailSerializer(user).data
 
                 # Get Current Time
@@ -133,7 +133,7 @@ class UserRegisterView(APIView):
 
                 # Load Activation Email Template
                 activation_email_template: str = render_to_string(
-                    template_name="users/activation_email.html",
+                    template_name="users/user_registered_email.html",
                     context={
                         "first_name": user_data.get("first_name"),
                         "last_name": user_data.get("last_name"),
