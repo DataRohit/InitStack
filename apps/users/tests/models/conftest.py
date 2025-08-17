@@ -6,8 +6,11 @@ import pytest
 from django.contrib.auth import get_user_model
 from django.test import RequestFactory
 
+# Local Imports
+from apps.users.models import User
+
 # Get User Model
-User = get_user_model()
+User: User = get_user_model()
 
 
 # User Factory Fixture

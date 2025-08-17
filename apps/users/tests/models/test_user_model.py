@@ -11,14 +11,16 @@ from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 
+# Local Imports
+from apps.users.models import User
+
 # If Type Checking
 if TYPE_CHECKING:
     # Third Party Imports
     from django.db import models
 
-
 # Get User Model
-User = get_user_model()
+User: User = get_user_model()
 
 
 # User Model Test Class

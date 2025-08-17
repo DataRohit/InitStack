@@ -36,7 +36,7 @@ from apps.users.serializers import UserLoginUnauthorizedErrorResponseSerializer
 logger = logging.getLogger(__name__)
 
 # Get User Model
-User: ClassVar[User] = get_user_model()
+User: User = get_user_model()
 
 
 # User Login View Class
@@ -103,10 +103,10 @@ class UserLoginView(APIView):
                 )
 
             # Get Identifier
-            identifier: str = serializer.validated_data.get("identifier", "").strip()
+            identifier: str = serializer.validated_data.get("identifier").strip()
 
             # Get Password
-            password: str = serializer.validated_data.get("password", "")
+            password: str = serializer.validated_data.get("password")
 
             # Build User Query
             user_query: Q = Q(username__iexact=identifier) | Q(email__iexact=identifier)

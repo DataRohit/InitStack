@@ -9,7 +9,7 @@ from django.contrib.auth.forms import UserChangeForm as BaseUserChangeForm
 from apps.users.models import User
 
 # Get User Model
-User: ClassVar[User] = get_user_model()
+User: User = get_user_model()
 
 
 # User Change Form Class

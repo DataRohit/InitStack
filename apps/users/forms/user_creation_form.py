@@ -10,7 +10,7 @@ from django.contrib.auth import get_user_model
 from apps.users.models import User
 
 # Get User Model
-User: ClassVar[User] = get_user_model()
+User: User = get_user_model()
 
 
 # User Creation Form Class

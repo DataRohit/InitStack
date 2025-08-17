@@ -9,8 +9,11 @@ from drf_spectacular.utils import extend_schema_serializer
 from rest_framework import serializers
 from rest_framework import status
 
+# Local Imports
+from apps.users.models import User
+
 # Get User Model
-User = get_user_model()
+User: User = get_user_model()
 
 
 # User Detail Serializer Class

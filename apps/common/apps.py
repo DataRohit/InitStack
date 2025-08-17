@@ -30,6 +30,7 @@ class CommonConfig(AppConfig):
         """
 
         # Local Imports
+        from apps.common.extensions.jwt_authentication_extension import JWTAuthenticationExtension  # noqa: F401
         from apps.common.health_checks.elasticsearch_health_check import ElasticsearchHealthCheck
         from apps.common.health_checks.jaeger_health_check import JaegerHealthCheck
         from apps.common.health_checks.mailpit_health_check import MailpitSMTPHealthCheck

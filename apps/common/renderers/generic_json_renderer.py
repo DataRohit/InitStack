@@ -72,6 +72,16 @@ class GenericJSONRenderer(JSONRenderer):
         # Get Status Code From Response
         status_code: int = response.status_code
 
+        # If Message In Data
+        if "message" in data:
+            # Return The Message Response
+            return json.dumps(
+                {
+                    "status_code": status_code,
+                    "message": data["message"],
+                },
+            ).encode(self.charset)
+
         # If Error In Data
         if "error" in data:
             # Return The Error Response

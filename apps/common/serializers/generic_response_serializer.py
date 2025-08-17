@@ -61,5 +61,40 @@ class Generic500ResponseSerializer(GenericResponseSerializer):
     )
 
 
+# Generic 202 Response Serializer Class
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
+            name="Accepted Example",
+            value={
+                "status_code": status.HTTP_202_ACCEPTED,
+            },
+            summary="Accepted Example",
+            description="Accepted Example",
+            response_only=True,
+            status_codes=[status.HTTP_202_ACCEPTED],
+        ),
+    ],
+)
+class Generic202ResponseSerializer(GenericResponseSerializer):
+    """
+    Generic 202 Response Serializer For Standardized API Responses.
+
+    Attributes:
+        status_code (int): HTTP Status Code For The Response.
+    """
+
+    # Message Field
+    message: serializers.CharField = serializers.CharField(
+        help_text=_("Message For The Response"),
+        label=_("Message"),
+        default="Accepted",
+    )
+
+
 # Exports
-__all__: list[str] = ["Generic500ResponseSerializer", "GenericResponseSerializer"]
+__all__: list[str] = [
+    "Generic202ResponseSerializer",
+    "Generic500ResponseSerializer",
+    "GenericResponseSerializer",
+]

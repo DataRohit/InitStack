@@ -16,10 +16,11 @@ from rest_framework import status
 
 # Local Imports
 from apps.common.serializers.generic_response_serializer import GenericResponseSerializer
+from apps.users.models import User
 from apps.users.serializers.base_serializer import UserDetailSerializer
 
 # Get User Model
-User = get_user_model()
+User: User = get_user_model()
 
 
 # User Register Payload Serializer Class

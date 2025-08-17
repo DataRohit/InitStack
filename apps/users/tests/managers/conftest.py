@@ -10,9 +10,10 @@ from django.test import RequestFactory
 
 # Local Imports
 from apps.users.managers.user_manager import UserManager
+from apps.users.models import User
 
 # Get User Model
-User = get_user_model()
+User: User = get_user_model()
 
 
 # User Manager Fixture

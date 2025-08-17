@@ -1,6 +1,3 @@
-# Standard Library Imports
-from typing import ClassVar
-
 # Third Party Imports
 import pytest
 from django.contrib.auth import get_user_model
@@ -12,7 +9,7 @@ from apps.users.forms.user_creation_form import UserCreationForm
 from apps.users.models import User
 
 # Get User Model
-User: ClassVar[User] = get_user_model()
+User: User = get_user_model()
 
 
 # User Form Data Fixture

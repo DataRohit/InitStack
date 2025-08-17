@@ -819,3 +819,15 @@ REFRESH_TOKEN_EXPIRY: int = env.int(
     var="REFRESH_TOKEN_EXPIRY",
     default=21600,
 )
+
+# Set The JWT Change Username Token Secret
+CHANGE_USERNAME_TOKEN_SECRET: str = env.str(
+    var="CHANGE_USERNAME_TOKEN_SECRET",
+    default="f2552c358027c8dba9706eb69f45f8b259c7e5a49a426dc7e859fb6a4e51593a",
+)
+
+# Set The JWT Change Username Token Expiry
+CHANGE_USERNAME_TOKEN_EXPIRY: int = env.int(
+    var="CHANGE_USERNAME_TOKEN_EXPIRY",
+    default=1800,
+)

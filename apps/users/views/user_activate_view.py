@@ -36,7 +36,7 @@ from apps.users.serializers import UserDetailSerializer
 logger = logging.getLogger(__name__)
 
 # Get User Model
-User: ClassVar[User] = get_user_model()
+User: User = get_user_model()
 
 
 # User Activate View Class

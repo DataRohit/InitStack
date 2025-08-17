@@ -14,7 +14,7 @@ from apps.users.forms import UserCreationForm
 from apps.users.models import User
 
 # Get User Model
-User: ClassVar[User] = get_user_model()
+User: User = get_user_model()
 
 
 # User Admin Class
