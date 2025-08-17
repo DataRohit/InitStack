@@ -6,7 +6,6 @@ from typing import ClassVar
 from django.contrib.auth.models import AbstractUser
 from django.core.validators import EmailValidator
 from django.core.validators import MaxLengthValidator
-from django.core.validators import MinLengthValidator
 from django.core.validators import RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -113,23 +112,6 @@ class User(AbstractUser, TimeStampedModel):
         verbose_name=_("Password"),
         blank=False,
         null=False,
-        validators=[
-            RegexValidator(
-                regex=r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
-                message=_(
-                    "Password Must Contain At Least One Uppercase Letter, One Lowercase Letter, One Digit, and One Special Character",  # noqa: E501
-                ),
-                code="invalid_password",
-            ),
-            MinLengthValidator(
-                limit_value=8,
-                message=_("Password Must Contain At Least 8 Characters"),
-            ),
-            MaxLengthValidator(
-                limit_value=60,
-                message=_("Password Must Not Exceed 60 Characters"),
-            ),
-        ],
     )
 
     # Email Field Configuration

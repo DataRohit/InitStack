@@ -22,6 +22,7 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from slugify import slugify
 
 # Local Imports
 from apps.common.renderers import GenericJSONRenderer
@@ -96,6 +97,14 @@ class UserActivateView(APIView):
                     jwt=token,
                     key=settings.ACTIVATION_TOKEN_SECRET,
                     algorithms=["HS256"],
+                    options={
+                        "verify_signature": True,
+                        "verify_exp": True,
+                        "verify_aud": True,
+                        "verify_iss": True,
+                    },
+                    audience=slugify(settings.PROJECT_NAME),
+                    issuer=slugify(settings.PROJECT_NAME),
                 )
 
                 # Get User ID
@@ -123,7 +132,7 @@ class UserActivateView(APIView):
                 user.save()
 
                 # Get Current Time
-                current_datetime: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
+                now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
 
                 # Get Current Site
                 current_site: Site = Site.objects.get_current()
@@ -143,7 +152,7 @@ class UserActivateView(APIView):
                         "username": user.username,
                         "email": user.email,
                         "login_link": login_link,
-                        "current_year": current_datetime.year,
+                        "current_year": now_dt.year,
                         "project_name": settings.PROJECT_NAME,
                     },
                 )

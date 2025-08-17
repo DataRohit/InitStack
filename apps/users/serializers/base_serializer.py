@@ -167,10 +167,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         help_text=_("User Last Login"),
         label=_("Last Login"),
         required=False,
-        allow_null=False,
-        error_messages={
-            "null": _("User Last Login Cannot Be Null"),
-        },
+        allow_null=True,
     )
 
     # Meta Class

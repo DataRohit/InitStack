@@ -22,12 +22,13 @@ from rest_framework.renderers import JSONRenderer
 from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from slugify import slugify
 
 # Local Imports
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers import UserCreateErrorResponseSerializer
+from apps.users.serializers import UserCreateBadRequestErrorResponseSerializer
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserRegisterPayloadSerializer
 from apps.users.serializers import UserRegisterResponseSerializer
@@ -65,7 +66,7 @@ class UserRegisterView(APIView):
         request=UserRegisterPayloadSerializer,
         responses={
             status.HTTP_201_CREATED: UserRegisterResponseSerializer,
-            status.HTTP_400_BAD_REQUEST: UserCreateErrorResponseSerializer,
+            status.HTTP_400_BAD_REQUEST: UserCreateBadRequestErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
         description="Register A New User Account",
@@ -87,6 +88,9 @@ class UserRegisterView(APIView):
         """
 
         try:
+            # Get Token Cache
+            token_cache: BaseCache = caches["token_cache"]
+
             # Validate Request Data
             serializer: UserRegisterPayloadSerializer = UserRegisterPayloadSerializer(data=request.data)
 
@@ -99,21 +103,20 @@ class UserRegisterView(APIView):
                 user_data: dict[str, Any] = UserDetailSerializer(user).data
 
                 # Get Current Time
-                current_datetime: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
+                now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
 
                 # Generate Activation Token
                 activation_token: str = jwt.encode(
                     payload={
                         "sub": str(user_data.get("id")),
-                        "iat": current_datetime,
-                        "exp": current_datetime + datetime.timedelta(seconds=settings.ACTIVATION_TOKEN_EXPIRY),
+                        "iss": slugify(settings.PROJECT_NAME),
+                        "aud": slugify(settings.PROJECT_NAME),
+                        "iat": now_dt,
+                        "exp": now_dt + datetime.timedelta(seconds=settings.ACTIVATION_TOKEN_EXPIRY),
                     },
                     key=settings.ACTIVATION_TOKEN_SECRET,
                     algorithm="HS256",
                 )
-
-                # Get Token Cache
-                token_cache: BaseCache = caches["token_cache"]
 
                 # Cache Activation Token
                 token_cache.set(
@@ -140,9 +143,8 @@ class UserRegisterView(APIView):
                         "username": user_data.get("username"),
                         "email": user_data.get("email"),
                         "activation_link": activation_link,
-                        "activation_link_expiry": current_datetime
-                        + datetime.timedelta(seconds=settings.ACTIVATION_TOKEN_EXPIRY),
-                        "current_year": current_datetime.year,
+                        "activation_link_expiry": now_dt + datetime.timedelta(seconds=settings.ACTIVATION_TOKEN_EXPIRY),
+                        "current_year": now_dt.year,
                         "project_name": settings.PROJECT_NAME,
                     },
                 )

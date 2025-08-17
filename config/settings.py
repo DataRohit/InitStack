@@ -795,3 +795,27 @@ ACTIVATION_TOKEN_EXPIRY: int = env.int(
     var="ACTIVATION_TOKEN_EXPIRY",
     default=1800,
 )
+
+# Set The JWT Access Token Secret
+ACCESS_TOKEN_SECRET: str = env.str(
+    var="ACCESS_TOKEN_SECRET",
+    default="5a31c25584d38c02c0f44b29f28575d9199aaecac6072d3fd1115814441ea85b",
+)
+
+# Set The JWT Access Token Expiry
+ACCESS_TOKEN_EXPIRY: int = env.int(
+    var="ACCESS_TOKEN_EXPIRY",
+    default=3600,
+)
+
+# Set The JWT Refresh Token Secret
+REFRESH_TOKEN_SECRET: str = env.str(
+    var="REFRESH_TOKEN_SECRET",
+    default="8cbf50ee740abf10f9d0f5f0f6d597b48723abec723203fc1e6c63b91c8b2263",
+)
+
+# Set The JWT Refresh Token Expiry
+REFRESH_TOKEN_EXPIRY: int = env.int(
+    var="REFRESH_TOKEN_EXPIRY",
+    default=21600,
+)

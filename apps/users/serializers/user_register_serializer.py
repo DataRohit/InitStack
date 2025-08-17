@@ -74,6 +74,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
         error_messages={
             "required": _("Username Is Required"),
             "null": _("Username Cannot Be Null"),
+            "blank": _("Username Cannot Be Blank"),
             "invalid_username": _("Username Must Contain Only Alphanumeric Characters With No Spaces"),
             "max_length": _("Username Must Not Exceed 60 Characters"),
         },
@@ -94,6 +95,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
         error_messages={
             "required": _("Email Is Required"),
             "null": _("Email Cannot Be Null"),
+            "blank": _("Email Cannot Be Blank"),
             "invalid_email": _("Invalid Email Address"),
         },
     )
@@ -118,6 +120,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
         error_messages={
             "required": _("First Name Is Required"),
             "null": _("First Name Cannot Be Null"),
+            "blank": _("First Name Cannot Be Blank"),
             "invalid_first_name": _("First Name Must Contain Only Letters With No Spaces"),
             "max_length": _("First Name Must Not Exceed 60 Characters"),
         },
@@ -143,6 +146,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
         error_messages={
             "required": _("Last Name Is Required"),
             "null": _("Last Name Cannot Be Null"),
+            "blank": _("Last Name Cannot Be Blank"),
             "invalid_last_name": _("Last Name Must Contain Only Letters With No Spaces"),
             "max_length": _("Last Name Must Not Exceed 60 Characters"),
         },
@@ -176,6 +180,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
         error_messages={
             "required": _("Password Is Required"),
             "null": _("Password Cannot Be Null"),
+            "blank": _("Password Cannot Be Blank"),
             "min_length": _("Password Must Contain At Least 8 Characters"),
             "max_length": _("Password Must Not Exceed 60 Characters"),
             "invalid_password": _(
@@ -195,6 +200,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
         error_messages={
             "required": _("Password Confirmation Is Required"),
             "null": _("Password Confirmation Cannot Be Null"),
+            "blank": _("Password Confirmation Cannot Be Blank"),
         },
     )
 
@@ -283,7 +289,7 @@ class UserRegisterPayloadSerializer(serializers.ModelSerializer):
         return User.objects.create_user(**validated_data, is_active=False, is_staff=False, is_superuser=False)
 
 
-# User Regsiter Response Serializer Class
+# User Register Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -368,6 +374,24 @@ class UserRegisterResponseSerializer(GenericResponseSerializer):
             },
             summary="Null Field Values",
             description="Error Response When Fields Are Provided As Null",
+            response_only=True,
+            status_codes=[status.HTTP_400_BAD_REQUEST],
+        ),
+        OpenApiExample(
+            name="Blank Field Values",
+            value={
+                "status_code": status.HTTP_400_BAD_REQUEST,
+                "errors": {
+                    "username": ["Username Cannot Be Blank"],
+                    "email": ["Email Cannot Be Blank"],
+                    "first_name": ["First Name Cannot Be Blank"],
+                    "last_name": ["Last Name Cannot Be Blank"],
+                    "password": ["Password Cannot Be Blank"],
+                    "re_password": ["Password Confirmation Cannot Be Blank"],
+                },
+            },
+            summary="Blank Field Values",
+            description="Error Response When Fields Are Provided As Blank",
             response_only=True,
             status_codes=[status.HTTP_400_BAD_REQUEST],
         ),
@@ -583,9 +607,9 @@ class UserRegisterResponseSerializer(GenericResponseSerializer):
         ),
     ],
 )
-class UserCreateErrorResponseSerializer(GenericResponseSerializer):
+class UserCreateBadRequestErrorResponseSerializer(GenericResponseSerializer):
     """
-    User Registration Error Response Serializer For Standardized API Responses.
+    User Registration Bad Request Error Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -689,7 +713,7 @@ class UserCreateErrorResponseSerializer(GenericResponseSerializer):
 
 # Exports
 __all__: list[str] = [
-    "UserCreateErrorResponseSerializer",
+    "UserCreateBadRequestErrorResponseSerializer",
     "UserRegisterPayloadSerializer",
     "UserRegisterResponseSerializer",
 ]

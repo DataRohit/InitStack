@@ -5,6 +5,7 @@ from django.urls.resolvers import URLResolver
 
 # Local Imports
 from apps.users.views.user_activate_view import UserActivateView
+from apps.users.views.user_login_view import UserLoginView
 from apps.users.views.user_register_view import UserRegisterView
 
 # Set The App Name
@@ -21,5 +22,10 @@ urlpatterns: list[URLResolver | URLPattern] = [
         route="activate/<str:token>/",
         view=UserActivateView.as_view(),
         name="activate",
+    ),
+    path(
+        route="login/",
+        view=UserLoginView.as_view(),
+        name="login",
     ),
 ]
