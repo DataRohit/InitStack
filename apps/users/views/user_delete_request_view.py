@@ -29,7 +29,7 @@ from apps.common.authentication.jwt_authentication import JWTAuthentication
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers import UserDeleteAcceptedResponseSerializer
+from apps.users.serializers import UserDeleteRequestAcceptedResponseSerializer
 from apps.users.serializers import UserDeleteRequestUnauthorizedErrorResponseSerializer
 
 # Logger
@@ -64,7 +64,7 @@ class UserDeleteRequestView(APIView):
         operation_id="User Delete Request",
         request=None,
         responses={
-            status.HTTP_202_ACCEPTED: UserDeleteAcceptedResponseSerializer,
+            status.HTTP_202_ACCEPTED: UserDeleteRequestAcceptedResponseSerializer,
             status.HTTP_401_UNAUTHORIZED: UserDeleteRequestUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },

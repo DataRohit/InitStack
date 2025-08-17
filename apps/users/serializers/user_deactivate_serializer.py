@@ -11,25 +11,25 @@ from apps.common.serializers.generic_response_serializer import GenericResponseS
 from apps.users.serializers.base_serializer import UserDetailSerializer
 
 
-# User Deactivate Accepted Response Serializer Class
+# User Deactivate Request Accepted Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Deactivate Accepted Response Example",
+            name="User Deactivate Request Accepted Response Example",
             value={
                 "status_code": 202,
                 "message": "Deactivation Request Sent Successfully",
             },
-            summary="User Deactivate Accepted Response Example",
-            description="User Deactivate Accepted Response Example",
+            summary="User Deactivate Request Accepted Response Example",
+            description="User Deactivate Request Accepted Response Example",
             response_only=True,
             status_codes=[status.HTTP_202_ACCEPTED],
         ),
     ],
 )
-class UserDeactivateAcceptedResponseSerializer(Generic202ResponseSerializer):
+class UserDeactivateRequestAcceptedResponseSerializer(Generic202ResponseSerializer):
     """
-    User Deactivate Accepted Response Serializer For Standardized API Responses.
+    User Deactivate Request Accepted Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -44,11 +44,11 @@ class UserDeactivateAcceptedResponseSerializer(Generic202ResponseSerializer):
     )
 
 
-# User Deactivate Response Serializer Class
+# User Deactivate Confirm Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Deactivate Response Example",
+            name="User Deactivate Confirm Response Example",
             value={
                 "status_code": 200,
                 "user": {
@@ -64,16 +64,16 @@ class UserDeactivateAcceptedResponseSerializer(Generic202ResponseSerializer):
                     "last_login": "2025-08-16T19:10:06.602446+05:30",
                 },
             },
-            summary="User Deactivate Response Example",
-            description="User Deactivate Response Example",
+            summary="User Deactivate Confirm Response Example",
+            description="User Deactivate Confirm Response Example",
             response_only=True,
             status_codes=[status.HTTP_200_OK],
         ),
     ],
 )
-class UserDeactivateResponseSerializer(GenericResponseSerializer):
+class UserDeactivateConfirmResponseSerializer(GenericResponseSerializer):
     """
-    User Deactivate Response Serializer For Standardized API Responses.
+    User Deactivate Confirm Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -227,8 +227,8 @@ class UserDeactivateConfirmUnauthorizedErrorResponseSerializer(GenericResponseSe
 
 # Exports
 __all__: list[str] = [
-    "UserDeactivateAcceptedResponseSerializer",
+    "UserDeactivateConfirmResponseSerializer",
     "UserDeactivateConfirmUnauthorizedErrorResponseSerializer",
+    "UserDeactivateRequestAcceptedResponseSerializer",
     "UserDeactivateRequestUnauthorizedErrorResponseSerializer",
-    "UserDeactivateResponseSerializer",
 ]

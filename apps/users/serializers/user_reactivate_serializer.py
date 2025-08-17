@@ -88,25 +88,25 @@ class UserReactivatePayloadSerializer(serializers.Serializer):
         return attrs
 
 
-# User Reactivate Accepted Response Serializer Class
+# User Reactivate Request Accepted Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Reactivate Accepted Response Example",
+            name="User Reactivate Request Accepted Response Example",
             value={
                 "status_code": 202,
                 "message": "Reactivation Request Sent Successfully",
             },
-            summary="User Reactivate Accepted Response Example",
-            description="User Reactivate Accepted Response Example",
+            summary="User Reactivate Request Accepted Response Example",
+            description="User Reactivate Request Accepted Response Example",
             response_only=True,
             status_codes=[status.HTTP_202_ACCEPTED],
         ),
     ],
 )
-class UserReactivateAcceptedResponseSerializer(GenericResponseSerializer):
+class UserReactivateRequestAcceptedResponseSerializer(GenericResponseSerializer):
     """
-    User Reactivate Accepted Response Serializer For Standardized API Responses.
+    User Reactivate Request Accepted Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -121,11 +121,11 @@ class UserReactivateAcceptedResponseSerializer(GenericResponseSerializer):
     )
 
 
-# User Reactivate Success Response Serializer Class
+# User Reactivate Confirm Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Reactivate Success Response Example",
+            name="User Reactivate Confirm Response Example",
             value={
                 "status_code": 200,
                 "user": {
@@ -141,13 +141,13 @@ class UserReactivateAcceptedResponseSerializer(GenericResponseSerializer):
                     "last_login": None,
                 },
             },
-            summary="User Reactivate Success Response Example",
-            description="User Reactivate Success Response Example",
+            summary="User Reactivate Confirm Response Example",
+            description="User Reactivate Confirm Response Example",
             response_only=True,
             status_codes=[status.HTTP_200_OK],
         ),
         OpenApiExample(
-            name="User Reactivate With Last Login Example",
+            name="User Reactivate Confirm With Last Login Example",
             value={
                 "status_code": 200,
                 "user": {
@@ -163,16 +163,16 @@ class UserReactivateAcceptedResponseSerializer(GenericResponseSerializer):
                     "last_login": "2025-08-17T15:40:00+05:30",
                 },
             },
-            summary="User Reactivate With Last Login",
-            description="User Reactivate Success Response Example With Last Login Timestamp",
+            summary="User Reactivate Confirm With Last Login",
+            description="User Reactivate Confirm Response Example With Last Login Timestamp",
             response_only=True,
             status_codes=[status.HTTP_200_OK],
         ),
     ],
 )
-class UserReactivateSuccessResponseSerializer(GenericResponseSerializer):
+class UserReactivateConfirmResponseSerializer(GenericResponseSerializer):
     """
-    User Reactivation Success Response Serializer For Standardized API Responses.
+    User Reactivate Confirm Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -335,7 +335,7 @@ class UserReactivateBadRequestErrorResponseSerializer(GenericResponseSerializer)
     )
 
 
-# User Reactivate Unauthorized Error Response Serializer Class
+# User Reactivate Confirm Unauthorized Error Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -362,9 +362,9 @@ class UserReactivateBadRequestErrorResponseSerializer(GenericResponseSerializer)
         ),
     ],
 )
-class UserReactivateUnauthorizedErrorResponseSerializer(GenericResponseSerializer):
+class UserReactivateConfirmUnauthorizedErrorResponseSerializer(GenericResponseSerializer):
     """
-    User Reactivate Unauthorized Error Response Serializer For Standardized API Responses.
+    User Reactivate Confirm Unauthorized Error Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -381,9 +381,9 @@ class UserReactivateUnauthorizedErrorResponseSerializer(GenericResponseSerialize
 
 # Exports
 __all__: list[str] = [
-    "UserReactivateAcceptedResponseSerializer",
     "UserReactivateBadRequestErrorResponseSerializer",
+    "UserReactivateConfirmResponseSerializer",
+    "UserReactivateConfirmUnauthorizedErrorResponseSerializer",
     "UserReactivatePayloadSerializer",
-    "UserReactivateSuccessResponseSerializer",
-    "UserReactivateUnauthorizedErrorResponseSerializer",
+    "UserReactivateRequestAcceptedResponseSerializer",
 ]

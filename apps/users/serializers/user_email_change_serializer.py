@@ -94,7 +94,7 @@ class UserEmailChangePayloadSerializer(serializers.Serializer):
         return attrs
 
 
-# User Email Change Bad Request Error Response Serializer Class
+# User Email Change Confirm Bad Request Error Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -181,9 +181,9 @@ class UserEmailChangePayloadSerializer(serializers.Serializer):
         ),
     ],
 )
-class UserEmailChangeBadRequestErrorResponseSerializer(GenericResponseSerializer):
+class UserEmailChangeConfirmBadRequestErrorResponseSerializer(GenericResponseSerializer):
     """
-    User Email Change Bad Request Error Response Serializer For Standardized API Responses.
+    User Email Change Confirm Bad Request Error Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -238,25 +238,25 @@ class UserEmailChangeBadRequestErrorResponseSerializer(GenericResponseSerializer
     )
 
 
-# User Email Change Accepted Response Serializer Class
+# User Email Change Request Accepted Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Email Change Accepted Response Example",
+            name="User Email Change Request Accepted Response Example",
             value={
                 "status_code": 202,
                 "message": "Email Change Request Sent Successfully",
             },
-            summary="User Email Change Accepted Response Example",
-            description="User Email Change Accepted Response Example",
+            summary="User Email Change Request Accepted Response Example",
+            description="User Email Change Request Accepted Response Example",
             response_only=True,
             status_codes=[status.HTTP_202_ACCEPTED],
         ),
     ],
 )
-class UserEmailChangeAcceptedResponseSerializer(Generic202ResponseSerializer):
+class UserEmailChangeRequestAcceptedResponseSerializer(Generic202ResponseSerializer):
     """
-    User Email Change Accepted Response Serializer For Standardized API Responses.
+    User Email Change Request Accepted Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -271,11 +271,11 @@ class UserEmailChangeAcceptedResponseSerializer(Generic202ResponseSerializer):
     )
 
 
-# User Email Change Response Serializer Class
+# User Email Change Confirm Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Email Change Response Example",
+            name="User Email Change Confirm Response Example",
             value={
                 "status_code": 200,
                 "user": {
@@ -291,16 +291,16 @@ class UserEmailChangeAcceptedResponseSerializer(Generic202ResponseSerializer):
                     "last_login": "2025-08-16T19:10:06.602446+05:30",
                 },
             },
-            summary="User Email Change Response Example",
-            description="User Email Change Response Example",
+            summary="User Email Change Confirm Response Example",
+            description="User Email Change Confirm Response Example",
             response_only=True,
             status_codes=[status.HTTP_200_OK],
         ),
     ],
 )
-class UserEmailChangeResponseSerializer(GenericResponseSerializer):
+class UserEmailChangeConfirmResponseSerializer(GenericResponseSerializer):
     """
-    User Email Change Response Serializer For Standardized API Responses.
+    User Email Change Confirm Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -465,10 +465,10 @@ class UserEmailChangeConfirmUnauthorizedErrorResponseSerializer(GenericResponseS
 
 # Exports
 __all__: list[str] = [
-    "UserEmailChangeAcceptedResponseSerializer",
-    "UserEmailChangeBadRequestErrorResponseSerializer",
+    "UserEmailChangeConfirmBadRequestErrorResponseSerializer",
+    "UserEmailChangeConfirmResponseSerializer",
     "UserEmailChangeConfirmUnauthorizedErrorResponseSerializer",
     "UserEmailChangePayloadSerializer",
+    "UserEmailChangeRequestAcceptedResponseSerializer",
     "UserEmailChangeRequestUnauthorizedErrorResponseSerializer",
-    "UserEmailChangeResponseSerializer",
 ]

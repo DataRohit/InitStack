@@ -29,8 +29,8 @@ from slugify import slugify
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
+from apps.users.serializers import UserDeactivateConfirmResponseSerializer
 from apps.users.serializers import UserDeactivateConfirmUnauthorizedErrorResponseSerializer
-from apps.users.serializers import UserDeactivateResponseSerializer
 from apps.users.serializers import UserDetailSerializer
 
 # Logger
@@ -65,7 +65,7 @@ class UserDeactivateConfirmView(APIView):
         operation_id="User Deactivate Confirm",
         request=None,
         responses={
-            status.HTTP_200_OK: UserDeactivateResponseSerializer,
+            status.HTTP_200_OK: UserDeactivateConfirmResponseSerializer,
             status.HTTP_401_UNAUTHORIZED: UserDeactivateConfirmUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },

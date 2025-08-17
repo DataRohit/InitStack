@@ -29,10 +29,10 @@ from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
 from apps.users.serializers import UserDetailSerializer
-from apps.users.serializers import UserEmailChangeBadRequestErrorResponseSerializer
+from apps.users.serializers import UserEmailChangeConfirmBadRequestErrorResponseSerializer
+from apps.users.serializers import UserEmailChangeConfirmResponseSerializer
 from apps.users.serializers import UserEmailChangeConfirmUnauthorizedErrorResponseSerializer
 from apps.users.serializers import UserEmailChangePayloadSerializer
-from apps.users.serializers import UserEmailChangeResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -66,8 +66,8 @@ class UserEmailChangeConfirmView(APIView):
         operation_id="User Email Change Confirm",
         request=UserEmailChangePayloadSerializer,
         responses={
-            status.HTTP_200_OK: UserEmailChangeResponseSerializer,
-            status.HTTP_400_BAD_REQUEST: UserEmailChangeBadRequestErrorResponseSerializer,
+            status.HTTP_200_OK: UserEmailChangeConfirmResponseSerializer,
+            status.HTTP_400_BAD_REQUEST: UserEmailChangeConfirmBadRequestErrorResponseSerializer,
             status.HTTP_401_UNAUTHORIZED: UserEmailChangeConfirmUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },

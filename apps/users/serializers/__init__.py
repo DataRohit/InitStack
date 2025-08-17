@@ -2,34 +2,34 @@
 from apps.users.serializers.base_serializer import UserDetailSerializer
 from apps.users.serializers.user_activate_serializer import UserActivateResponseSerializer
 from apps.users.serializers.user_activate_serializer import UserActivateUnauthorizedErrorResponseSerializer
-from apps.users.serializers.user_deactivate_serializer import UserDeactivateAcceptedResponseSerializer
+from apps.users.serializers.user_deactivate_serializer import UserDeactivateConfirmResponseSerializer
 from apps.users.serializers.user_deactivate_serializer import UserDeactivateConfirmUnauthorizedErrorResponseSerializer
+from apps.users.serializers.user_deactivate_serializer import UserDeactivateRequestAcceptedResponseSerializer
 from apps.users.serializers.user_deactivate_serializer import UserDeactivateRequestUnauthorizedErrorResponseSerializer
-from apps.users.serializers.user_deactivate_serializer import UserDeactivateResponseSerializer
-from apps.users.serializers.user_delete_serializer import UserDeleteAcceptedResponseSerializer
 from apps.users.serializers.user_delete_serializer import UserDeleteConfirmUnauthorizedErrorResponseSerializer
+from apps.users.serializers.user_delete_serializer import UserDeleteRequestAcceptedResponseSerializer
 from apps.users.serializers.user_delete_serializer import UserDeleteRequestUnauthorizedErrorResponseSerializer
-from apps.users.serializers.user_email_change_serializer import UserEmailChangeAcceptedResponseSerializer
-from apps.users.serializers.user_email_change_serializer import UserEmailChangeBadRequestErrorResponseSerializer
+from apps.users.serializers.user_email_change_serializer import UserEmailChangeConfirmBadRequestErrorResponseSerializer
+from apps.users.serializers.user_email_change_serializer import UserEmailChangeConfirmResponseSerializer
 from apps.users.serializers.user_email_change_serializer import (
     UserEmailChangeConfirmUnauthorizedErrorResponseSerializer,
 )
 from apps.users.serializers.user_email_change_serializer import UserEmailChangePayloadSerializer
+from apps.users.serializers.user_email_change_serializer import UserEmailChangeRequestAcceptedResponseSerializer
 from apps.users.serializers.user_email_change_serializer import (
     UserEmailChangeRequestUnauthorizedErrorResponseSerializer,
 )
-from apps.users.serializers.user_email_change_serializer import UserEmailChangeResponseSerializer
 from apps.users.serializers.user_login_serializer import UserLoginBadRequestErrorResponseSerializer
 from apps.users.serializers.user_login_serializer import UserLoginPayloadSerializer
 from apps.users.serializers.user_login_serializer import UserLoginResponseSerializer
 from apps.users.serializers.user_login_serializer import UserLoginUnauthorizedErrorResponseSerializer
 from apps.users.serializers.user_me_serializer import UserMeResponseSerializer
 from apps.users.serializers.user_me_serializer import UserMeUnauthorizedErrorResponseSerializer
-from apps.users.serializers.user_reactivate_serializer import UserReactivateAcceptedResponseSerializer
 from apps.users.serializers.user_reactivate_serializer import UserReactivateBadRequestErrorResponseSerializer
+from apps.users.serializers.user_reactivate_serializer import UserReactivateConfirmResponseSerializer
+from apps.users.serializers.user_reactivate_serializer import UserReactivateConfirmUnauthorizedErrorResponseSerializer
 from apps.users.serializers.user_reactivate_serializer import UserReactivatePayloadSerializer
-from apps.users.serializers.user_reactivate_serializer import UserReactivateSuccessResponseSerializer
-from apps.users.serializers.user_reactivate_serializer import UserReactivateUnauthorizedErrorResponseSerializer
+from apps.users.serializers.user_reactivate_serializer import UserReactivateRequestAcceptedResponseSerializer
 from apps.users.serializers.user_register_serializer import UserCreateBadRequestErrorResponseSerializer
 from apps.users.serializers.user_register_serializer import UserRegisterPayloadSerializer
 from apps.users.serializers.user_register_serializer import UserRegisterResponseSerializer
@@ -46,47 +46,49 @@ from apps.users.serializers.user_reset_password_serializer import (
     UserResetPasswordRequestBadRequestErrorResponseSerializer,
 )
 from apps.users.serializers.user_reset_password_serializer import UserResetPasswordRequestPayloadSerializer
-from apps.users.serializers.user_username_change_serializer import UserUsernameChangeAcceptedResponseSerializer
-from apps.users.serializers.user_username_change_serializer import UserUsernameChangeBadRequestErrorResponseSerialzier
+from apps.users.serializers.user_username_change_serializer import (
+    UserUsernameChangeConfirmBadRequestErrorResponseSerialzier,
+)
+from apps.users.serializers.user_username_change_serializer import UserUsernameChangeConfirmResponseSerializer
 from apps.users.serializers.user_username_change_serializer import (
     UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer,
 )
 from apps.users.serializers.user_username_change_serializer import UserUsernameChangePayloadSerializer
+from apps.users.serializers.user_username_change_serializer import UserUsernameChangeRequestAcceptedResponseSerializer
 from apps.users.serializers.user_username_change_serializer import (
     UserUsernameChangeRequestUnauthorizedErrorResponseSerializer,
 )
-from apps.users.serializers.user_username_change_serializer import UserUsernameChangeResponseSerializer
 
 # Exports
 __all__: list[str] = [
     "UserActivateResponseSerializer",
     "UserActivateUnauthorizedErrorResponseSerializer",
     "UserCreateBadRequestErrorResponseSerializer",
-    "UserDeactivateAcceptedResponseSerializer",
+    "UserDeactivateConfirmResponseSerializer",
     "UserDeactivateConfirmUnauthorizedErrorResponseSerializer",
+    "UserDeactivateRequestAcceptedResponseSerializer",
     "UserDeactivateRequestUnauthorizedErrorResponseSerializer",
-    "UserDeactivateResponseSerializer",
-    "UserDeleteAcceptedResponseSerializer",
     "UserDeleteConfirmUnauthorizedErrorResponseSerializer",
+    "UserDeleteRequestAcceptedResponseSerializer",
     "UserDeleteRequestUnauthorizedErrorResponseSerializer",
     "UserDetailSerializer",
-    "UserEmailChangeAcceptedResponseSerializer",
-    "UserEmailChangeBadRequestErrorResponseSerializer",
+    "UserEmailChangeConfirmBadRequestErrorResponseSerializer",
+    "UserEmailChangeConfirmResponseSerializer",
     "UserEmailChangeConfirmUnauthorizedErrorResponseSerializer",
     "UserEmailChangePayloadSerializer",
+    "UserEmailChangeRequestAcceptedResponseSerializer",
     "UserEmailChangeRequestUnauthorizedErrorResponseSerializer",
-    "UserEmailChangeResponseSerializer",
     "UserLoginBadRequestErrorResponseSerializer",
     "UserLoginPayloadSerializer",
     "UserLoginResponseSerializer",
     "UserLoginUnauthorizedErrorResponseSerializer",
     "UserMeResponseSerializer",
     "UserMeUnauthorizedErrorResponseSerializer",
-    "UserReactivateAcceptedResponseSerializer",
     "UserReactivateBadRequestErrorResponseSerializer",
+    "UserReactivateConfirmResponseSerializer",
+    "UserReactivateConfirmUnauthorizedErrorResponseSerializer",
     "UserReactivatePayloadSerializer",
-    "UserReactivateSuccessResponseSerializer",
-    "UserReactivateUnauthorizedErrorResponseSerializer",
+    "UserReactivateRequestAcceptedResponseSerializer",
     "UserRegisterPayloadSerializer",
     "UserRegisterResponseSerializer",
     "UserResetPasswordConfirmBadRequestErrorResponseSerializer",
@@ -97,10 +99,10 @@ __all__: list[str] = [
     "UserResetPasswordRequestBadRequestErrorResponseSerializer",
     "UserResetPasswordRequestPayloadSerializer",
     "UserResetPasswordRequestPayloadSerializer",
-    "UserUsernameChangeAcceptedResponseSerializer",
-    "UserUsernameChangeBadRequestErrorResponseSerialzier",
+    "UserUsernameChangeConfirmBadRequestErrorResponseSerialzier",
+    "UserUsernameChangeConfirmResponseSerializer",
     "UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer",
     "UserUsernameChangePayloadSerializer",
+    "UserUsernameChangeRequestAcceptedResponseSerializer",
     "UserUsernameChangeRequestUnauthorizedErrorResponseSerializer",
-    "UserUsernameChangeResponseSerializer",
 ]

@@ -92,7 +92,7 @@ class UserUsernameChangePayloadSerializer(serializers.Serializer):
         return attrs
 
 
-# User Username Change Bad Request Error Response Serializer Class
+# User Username Change Confirm Bad Request Error Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -165,9 +165,9 @@ class UserUsernameChangePayloadSerializer(serializers.Serializer):
         ),
     ],
 )
-class UserUsernameChangeBadRequestErrorResponseSerialzier(GenericResponseSerializer):
+class UserUsernameChangeConfirmBadRequestErrorResponseSerialzier(GenericResponseSerializer):
     """
-    User Username Change Bad Request Error Response Serializer For Standardized API Responses.
+    User Username Change Confirm Bad Request Error Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -222,25 +222,25 @@ class UserUsernameChangeBadRequestErrorResponseSerialzier(GenericResponseSeriali
     )
 
 
-# User Username Change Accepted Response Serializer Class
+# User Username Change Request Accepted Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Username Change Accepted Response Example",
+            name="User Username Change Request Accepted Response Example",
             value={
                 "status_code": 202,
                 "message": "Username Change Request Sent Successfully",
             },
-            summary="User Username Change Accepted Response Example",
-            description="User Username Change Accepted Response Example",
+            summary="User Username Change Request Accepted Response Example",
+            description="User Username Change Request Accepted Response Example",
             response_only=True,
             status_codes=[status.HTTP_202_ACCEPTED],
         ),
     ],
 )
-class UserUsernameChangeAcceptedResponseSerializer(Generic202ResponseSerializer):
+class UserUsernameChangeRequestAcceptedResponseSerializer(Generic202ResponseSerializer):
     """
-    User Username Change Accepted Response Serializer For Standardized API Responses.
+    User Username Change Request Accepted Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -255,11 +255,11 @@ class UserUsernameChangeAcceptedResponseSerializer(Generic202ResponseSerializer)
     )
 
 
-# User Username Change Response Serializer Class
+# User Username Change Confirm Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Username Change Response Example",
+            name="User Username Change Confirm Response Example",
             value={
                 "status_code": 200,
                 "user": {
@@ -275,16 +275,16 @@ class UserUsernameChangeAcceptedResponseSerializer(Generic202ResponseSerializer)
                     "last_login": "2025-08-16T19:10:06.602446+05:30",
                 },
             },
-            summary="User Username Change Response Example",
-            description="User Username Change Response Example",
+            summary="User Username Change Confirm Response Example",
+            description="User Username Change Confirm Response Example",
             response_only=True,
             status_codes=[status.HTTP_200_OK],
         ),
     ],
 )
-class UserUsernameChangeResponseSerializer(GenericResponseSerializer):
+class UserUsernameChangeConfirmResponseSerializer(GenericResponseSerializer):
     """
-    User Username Change Response Serializer For Standardized API Responses.
+    User Username Change Confirm Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -449,10 +449,10 @@ class UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer(GenericRespon
 
 # Exports
 __all__: list[str] = [
-    "UserUsernameChangeAcceptedResponseSerializer",
-    "UserUsernameChangeBadRequestErrorResponseSerialzier",
+    "UserUsernameChangeConfirmBadRequestErrorResponseSerialzier",
+    "UserUsernameChangeConfirmResponseSerializer",
     "UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer",
     "UserUsernameChangePayloadSerializer",
+    "UserUsernameChangeRequestAcceptedResponseSerializer",
     "UserUsernameChangeRequestUnauthorizedErrorResponseSerializer",
-    "UserUsernameChangeResponseSerializer",
 ]

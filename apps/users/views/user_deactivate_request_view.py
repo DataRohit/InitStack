@@ -29,7 +29,7 @@ from apps.common.authentication.jwt_authentication import JWTAuthentication
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers import UserDeactivateAcceptedResponseSerializer
+from apps.users.serializers import UserDeactivateRequestAcceptedResponseSerializer
 from apps.users.serializers import UserDeactivateRequestUnauthorizedErrorResponseSerializer
 
 # Logger
@@ -64,7 +64,7 @@ class UserDeactivateRequestView(APIView):
         operation_id="User Deactivate Request",
         request=None,
         responses={
-            status.HTTP_202_ACCEPTED: UserDeactivateAcceptedResponseSerializer,
+            status.HTTP_202_ACCEPTED: UserDeactivateRequestAcceptedResponseSerializer,
             status.HTTP_401_UNAUTHORIZED: UserDeactivateRequestUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },

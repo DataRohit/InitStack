@@ -10,25 +10,25 @@ from apps.common.serializers.generic_response_serializer import Generic202Respon
 from apps.common.serializers.generic_response_serializer import GenericResponseSerializer
 
 
-# User Delete Accepted Response Serializer Class
+# User Delete Request Accepted Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
-            name="User Delete Accepted Response Example",
+            name="User Delete Request Accepted Response Example",
             value={
                 "status_code": 202,
                 "message": "Deletion Request Sent Successfully",
             },
-            summary="User Delete Accepted Response Example",
-            description="User Delete Accepted Response Example",
+            summary="User Delete Request Accepted Response Example",
+            description="User Delete Request Accepted Response Example",
             response_only=True,
             status_codes=[status.HTTP_202_ACCEPTED],
         ),
     ],
 )
-class UserDeleteAcceptedResponseSerializer(Generic202ResponseSerializer):
+class UserDeleteRequestAcceptedResponseSerializer(Generic202ResponseSerializer):
     """
-    User Delete Accepted Response Serializer For Standardized API Responses.
+    User Delete Request Accepted Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -177,7 +177,7 @@ class UserDeleteConfirmUnauthorizedErrorResponseSerializer(GenericResponseSerial
 
 # Exports
 __all__: list[str] = [
-    "UserDeleteAcceptedResponseSerializer",
     "UserDeleteConfirmUnauthorizedErrorResponseSerializer",
+    "UserDeleteRequestAcceptedResponseSerializer",
     "UserDeleteRequestUnauthorizedErrorResponseSerializer",
 ]

@@ -29,10 +29,10 @@ from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
 from apps.users.serializers import UserDetailSerializer
-from apps.users.serializers import UserUsernameChangeBadRequestErrorResponseSerialzier
+from apps.users.serializers import UserUsernameChangeConfirmBadRequestErrorResponseSerialzier
+from apps.users.serializers import UserUsernameChangeConfirmResponseSerializer
 from apps.users.serializers import UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer
 from apps.users.serializers import UserUsernameChangePayloadSerializer
-from apps.users.serializers import UserUsernameChangeResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -66,8 +66,8 @@ class UserUsernameChangeConfirmView(APIView):
         operation_id="User Username Change Confirm",
         request=UserUsernameChangePayloadSerializer,
         responses={
-            status.HTTP_200_OK: UserUsernameChangeResponseSerializer,
-            status.HTTP_400_BAD_REQUEST: UserUsernameChangeBadRequestErrorResponseSerialzier,
+            status.HTTP_200_OK: UserUsernameChangeConfirmResponseSerializer,
+            status.HTTP_400_BAD_REQUEST: UserUsernameChangeConfirmBadRequestErrorResponseSerialzier,
             status.HTTP_401_UNAUTHORIZED: UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },

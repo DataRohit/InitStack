@@ -29,7 +29,7 @@ from apps.common.authentication.jwt_authentication import JWTAuthentication
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers import UserUsernameChangeAcceptedResponseSerializer
+from apps.users.serializers import UserUsernameChangeRequestAcceptedResponseSerializer
 from apps.users.serializers import UserUsernameChangeRequestUnauthorizedErrorResponseSerializer
 
 # Logger
@@ -64,7 +64,7 @@ class UserUsernameChangeRequestView(APIView):
         operation_id="User Username Change Request",
         request=None,
         responses={
-            status.HTTP_202_ACCEPTED: UserUsernameChangeAcceptedResponseSerializer,
+            status.HTTP_202_ACCEPTED: UserUsernameChangeRequestAcceptedResponseSerializer,
             status.HTTP_401_UNAUTHORIZED: UserUsernameChangeRequestUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },

@@ -30,8 +30,8 @@ from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
 from apps.users.serializers import UserDetailSerializer
-from apps.users.serializers import UserReactivateSuccessResponseSerializer
-from apps.users.serializers import UserReactivateUnauthorizedErrorResponseSerializer
+from apps.users.serializers import UserReactivateConfirmResponseSerializer
+from apps.users.serializers import UserReactivateConfirmUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -65,8 +65,8 @@ class UserReactivateConfirmView(APIView):
         operation_id="User Reactivate Confirm",
         request=None,
         responses={
-            status.HTTP_200_OK: UserReactivateSuccessResponseSerializer,
-            status.HTTP_401_UNAUTHORIZED: UserReactivateUnauthorizedErrorResponseSerializer,
+            status.HTTP_200_OK: UserReactivateConfirmResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: UserReactivateConfirmUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
         description="Confirm Account Reactivation Using Token",

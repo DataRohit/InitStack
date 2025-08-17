@@ -29,7 +29,7 @@ from apps.common.authentication.jwt_authentication import JWTAuthentication
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers import UserEmailChangeAcceptedResponseSerializer
+from apps.users.serializers import UserEmailChangeRequestAcceptedResponseSerializer
 from apps.users.serializers import UserEmailChangeRequestUnauthorizedErrorResponseSerializer
 
 # Logger
@@ -64,7 +64,7 @@ class UserEmailChangeRequestView(APIView):
         operation_id="User Email Change Request",
         request=None,
         responses={
-            status.HTTP_202_ACCEPTED: UserEmailChangeAcceptedResponseSerializer,
+            status.HTTP_202_ACCEPTED: UserEmailChangeRequestAcceptedResponseSerializer,
             status.HTTP_401_UNAUTHORIZED: UserEmailChangeRequestUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },

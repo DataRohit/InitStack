@@ -30,9 +30,9 @@ from slugify import slugify
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers import UserReactivateAcceptedResponseSerializer
 from apps.users.serializers import UserReactivateBadRequestErrorResponseSerializer
 from apps.users.serializers import UserReactivatePayloadSerializer
+from apps.users.serializers import UserReactivateRequestAcceptedResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -63,7 +63,7 @@ class UserReactivateRequestView(APIView):
         operation_id="User Reactivate Request",
         request=UserReactivatePayloadSerializer,
         responses={
-            status.HTTP_202_ACCEPTED: UserReactivateAcceptedResponseSerializer,
+            status.HTTP_202_ACCEPTED: UserReactivateRequestAcceptedResponseSerializer,
             status.HTTP_400_BAD_REQUEST: UserReactivateBadRequestErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
