@@ -30,9 +30,9 @@ from slugify import slugify
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers.user_reactivate_serializer import UserReactivateAcceptedResponseSerializer
-from apps.users.serializers.user_reactivate_serializer import UserReactivateBadRequestErrorResponseSerializer
-from apps.users.serializers.user_reactivate_serializer import UserReactivatePayloadSerializer
+from apps.users.serializers import UserReactivateAcceptedResponseSerializer
+from apps.users.serializers import UserReactivateBadRequestErrorResponseSerializer
+from apps.users.serializers import UserReactivatePayloadSerializer
 
 # Logger
 logger = logging.getLogger(__name__)

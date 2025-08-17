@@ -30,7 +30,7 @@ from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
 from apps.users.serializers import UserEmailChangeAcceptedResponseSerializer
-from apps.users.serializers import UserEmailUnauthorizedErrorResponseSerializer
+from apps.users.serializers import UserEmailChangeRequestUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ class UserEmailChangeRequestView(APIView):
         request=None,
         responses={
             status.HTTP_202_ACCEPTED: UserEmailChangeAcceptedResponseSerializer,
-            status.HTTP_401_UNAUTHORIZED: UserEmailUnauthorizedErrorResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: UserEmailChangeRequestUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
         description="Initiate An Email Change Request For The Authenticated User",

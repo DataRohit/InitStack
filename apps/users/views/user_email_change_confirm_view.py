@@ -30,9 +30,9 @@ from apps.common.serializers.generic_response_serializer import Generic500Respon
 from apps.users.models import User
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserEmailChangeBadRequestErrorResponseSerializer
+from apps.users.serializers import UserEmailChangeConfirmUnauthorizedErrorResponseSerializer
 from apps.users.serializers import UserEmailChangePayloadSerializer
 from apps.users.serializers import UserEmailChangeResponseSerializer
-from apps.users.serializers import UserEmailUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class UserEmailChangeConfirmView(APIView):
         responses={
             status.HTTP_200_OK: UserEmailChangeResponseSerializer,
             status.HTTP_400_BAD_REQUEST: UserEmailChangeBadRequestErrorResponseSerializer,
-            status.HTTP_401_UNAUTHORIZED: UserEmailUnauthorizedErrorResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: UserEmailChangeConfirmUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
         description="Confirm Email Change Using Token And Update Email",

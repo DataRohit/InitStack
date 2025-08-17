@@ -29,8 +29,8 @@ from apps.common.authentication.jwt_authentication import JWTAuthentication
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers.user_delete_serializer import UserDeleteAcceptedResponseSerializer
-from apps.users.serializers.user_delete_serializer import UserDeleteUnauthorizedErrorResponseSerializer
+from apps.users.serializers import UserDeleteAcceptedResponseSerializer
+from apps.users.serializers import UserDeleteRequestUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -65,7 +65,7 @@ class UserDeleteRequestView(APIView):
         request=None,
         responses={
             status.HTTP_202_ACCEPTED: UserDeleteAcceptedResponseSerializer,
-            status.HTTP_401_UNAUTHORIZED: UserDeleteUnauthorizedErrorResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: UserDeleteRequestUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
         description="Initiate A Delete Request For The Authenticated User",

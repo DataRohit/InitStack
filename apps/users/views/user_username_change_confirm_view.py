@@ -30,9 +30,9 @@ from apps.common.serializers.generic_response_serializer import Generic500Respon
 from apps.users.models import User
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserUsernameChangeBadRequestErrorResponseSerialzier
+from apps.users.serializers import UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer
 from apps.users.serializers import UserUsernameChangePayloadSerializer
 from apps.users.serializers import UserUsernameChangeResponseSerializer
-from apps.users.serializers import UserUsernameUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class UserUsernameChangeConfirmView(APIView):
         responses={
             status.HTTP_200_OK: UserUsernameChangeResponseSerializer,
             status.HTTP_400_BAD_REQUEST: UserUsernameChangeBadRequestErrorResponseSerialzier,
-            status.HTTP_401_UNAUTHORIZED: UserUsernameUnauthorizedErrorResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
         description="Confirm Username Change Using Token And Update Username",

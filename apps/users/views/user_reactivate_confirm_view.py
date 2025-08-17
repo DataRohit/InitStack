@@ -29,9 +29,9 @@ from slugify import slugify
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers.base_serializer import UserDetailSerializer
-from apps.users.serializers.user_reactivate_serializer import UserReactivateSuccessResponseSerializer
-from apps.users.serializers.user_reactivate_serializer import UserReactivateUnauthorizedErrorResponseSerializer
+from apps.users.serializers import UserDetailSerializer
+from apps.users.serializers import UserReactivateSuccessResponseSerializer
+from apps.users.serializers import UserReactivateUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)

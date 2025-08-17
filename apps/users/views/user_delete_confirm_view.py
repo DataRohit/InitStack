@@ -27,7 +27,7 @@ from slugify import slugify
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
-from apps.users.serializers.user_delete_serializer import UserDeleteUnauthorizedErrorResponseSerializer
+from apps.users.serializers import UserDeleteConfirmUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -62,7 +62,7 @@ class UserDeleteConfirmView(APIView):
         request=None,
         responses={
             status.HTTP_204_NO_CONTENT: None,
-            status.HTTP_401_UNAUTHORIZED: UserDeleteUnauthorizedErrorResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: UserDeleteConfirmUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
         description="Confirm Account Deletion Using Token",

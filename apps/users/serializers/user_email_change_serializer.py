@@ -320,7 +320,7 @@ class UserEmailChangeResponseSerializer(GenericResponseSerializer):
     )
 
 
-# User Email Change Unauthorized Error Response Serializer Class
+# User Email Change Request Unauthorized Error Response Serializer Class
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
@@ -390,6 +390,39 @@ class UserEmailChangeResponseSerializer(GenericResponseSerializer):
             status_codes=[status.HTTP_401_UNAUTHORIZED],
         ),
         OpenApiExample(
+            name="Invalid Deactivation Token",
+            value={
+                "status_code": status.HTTP_401_UNAUTHORIZED,
+                "error": "Invalid Deactivation Token",
+            },
+            summary="Invalid Deactivation Token",
+            description="Invalid Deactivation Token Error Response",
+            response_only=True,
+            status_codes=[status.HTTP_401_UNAUTHORIZED],
+        ),
+    ],
+)
+class UserEmailChangeRequestUnauthorizedErrorResponseSerializer(GenericResponseSerializer):
+    """
+    User Email Change Request Unauthorized Error Response Serializer For Standardized API Responses.
+
+    Attributes:
+        status_code (int): HTTP Status Code For The Response.
+        error (str): Error Message For The Response.
+    """
+
+    # Error Field
+    error: serializers.CharField = serializers.CharField(
+        help_text=_("Error Message For The Response"),
+        label=_("Error Message"),
+        default="Unauthorized",
+    )
+
+
+# User Email Change Confirm Unauthorized Error Response Serializer Class
+@extend_schema_serializer(
+    examples=[
+        OpenApiExample(
             name="Invalid Email Change Token",
             value={
                 "status_code": status.HTTP_401_UNAUTHORIZED,
@@ -413,9 +446,9 @@ class UserEmailChangeResponseSerializer(GenericResponseSerializer):
         ),
     ],
 )
-class UserEmailUnauthorizedErrorResponseSerializer(GenericResponseSerializer):
+class UserEmailChangeConfirmUnauthorizedErrorResponseSerializer(GenericResponseSerializer):
     """
-    User Email Change Unauthorized Error Response Serializer For Standardized API Responses.
+    User Email Change Confirm Unauthorized Error Response Serializer For Standardized API Responses.
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
@@ -434,7 +467,8 @@ class UserEmailUnauthorizedErrorResponseSerializer(GenericResponseSerializer):
 __all__: list[str] = [
     "UserEmailChangeAcceptedResponseSerializer",
     "UserEmailChangeBadRequestErrorResponseSerializer",
+    "UserEmailChangeConfirmUnauthorizedErrorResponseSerializer",
     "UserEmailChangePayloadSerializer",
+    "UserEmailChangeRequestUnauthorizedErrorResponseSerializer",
     "UserEmailChangeResponseSerializer",
-    "UserEmailUnauthorizedErrorResponseSerializer",
 ]
