@@ -30,8 +30,8 @@ from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
 from apps.users.models import User
 from apps.users.serializers.base_serializer import UserDetailSerializer
-from apps.users.serializers.user_deactivate_serializer import UserDeactivateResponseSerializer
-from apps.users.serializers.user_deactivate_serializer import UserDeactivateUnauthorizedErrorResponseSerializer
+from apps.users.serializers.user_reactivate_serializer import UserReactivateSuccessResponseSerializer
+from apps.users.serializers.user_reactivate_serializer import UserReactivateUnauthorizedErrorResponseSerializer
 
 # Logger
 logger = logging.getLogger(__name__)
@@ -40,10 +40,10 @@ logger = logging.getLogger(__name__)
 User: User = get_user_model()
 
 
-# User Deactivate Confirm View Class
-class UserDeactivateConfirmView(APIView):
+# User Reactivate Confirm View Class
+class UserReactivateConfirmView(APIView):
     """
-    User Deactivate Confirm API View Class.
+    User Reactivate Confirm API View Class.
 
     Attributes:
         renderer_classes (ClassVar[list[JSONRenderer]]): List Of Response Renderers.
@@ -58,34 +58,34 @@ class UserDeactivateConfirmView(APIView):
     authentication_classes: ClassVar[list[BaseAuthentication]] = []
     permission_classes: ClassVar[list[BasePermission]] = [AllowAny]
     http_method_names: ClassVar[list[str]] = ["get"]
-    object_label: ClassVar[str] = "user_deactivate_confirm"
+    object_label: ClassVar[str] = "user_reactivate_confirm"
 
-    # Get Method For Deactivate Confirmation
+    # Get Method For Reactivate Confirmation
     @extend_schema(
-        operation_id="User Deactivate Confirm",
+        operation_id="User Reactivate Confirm",
         request=None,
         responses={
-            status.HTTP_200_OK: UserDeactivateResponseSerializer,
-            status.HTTP_401_UNAUTHORIZED: UserDeactivateUnauthorizedErrorResponseSerializer,
+            status.HTTP_200_OK: UserReactivateSuccessResponseSerializer,
+            status.HTTP_401_UNAUTHORIZED: UserReactivateUnauthorizedErrorResponseSerializer,
             status.HTTP_500_INTERNAL_SERVER_ERROR: Generic500ResponseSerializer,
         },
-        description="Confirm Account Deactivation Using Token",
-        summary="Confirm Deactivation",
+        description="Confirm Account Reactivation Using Token",
+        summary="Confirm Reactivation",
         tags=["User"],
     )
     def get(self, request: Request, token: str) -> Response:
         """
-        Process Deactivation Confirmation.
+        Process Reactivation Confirmation.
 
         Args:
             request (Request): HTTP Request Object.
-            token (str): Deactivation Token From URL.
+            token (str): Reactivation Token From URL.
 
         Returns:
             Response: HTTP Response With Success Or Error Message.
 
         Raises:
-            Exception: For Any Unexpected Errors During Deactivation.
+            Exception: For Any Unexpected Errors During Reactivation.
         """
 
         try:
@@ -96,7 +96,7 @@ class UserDeactivateConfirmView(APIView):
                 # Decode Token
                 payload: dict[str, Any] = jwt.decode(
                     jwt=token,
-                    key=settings.DEACTIVATION_TOKEN_SECRET,
+                    key=settings.REACTIVATION_TOKEN_SECRET,
                     algorithms=["HS256"],
                     options={
                         "verify_signature": True,
@@ -111,7 +111,7 @@ class UserDeactivateConfirmView(APIView):
             except jwt.InvalidTokenError:
                 # Return Unauthorized Response
                 return Response(
-                    data={"error": "Invalid Deactivation Token"},
+                    data={"error": "Invalid Reactivation Token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
@@ -119,25 +119,25 @@ class UserDeactivateConfirmView(APIView):
             user_id: str = payload.get("sub")
 
             # Get Cached Token
-            cached_token: str | None = token_cache.get(f"deactivation_token_{user_id}")
+            cached_token: str | None = token_cache.get(f"reactivation_token_{user_id}")
 
             # If Token Does Not Match
             if not cached_token or cached_token != token:
                 # Return Unauthorized Response
                 return Response(
-                    data={"error": "Invalid Or Expired Deactivation Token"},
+                    data={"error": "Invalid Or Expired Reactivation Token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
 
             # Get User
             user: User = User.objects.get(id=user_id)
 
-            # Deactivate User
-            user.is_active = False
+            # Reactivate User
+            user.is_active = True
             user.save(update_fields=["is_active"])
 
-            # Revoke Deactivation Token
-            token_cache.delete(f"deactivation_token_{user_id}")
+            # Revoke Reactivation Token
+            token_cache.delete(f"reactivation_token_{user_id}")
 
             # Revoke Access & Refresh Tokens
             token_cache.delete(f"access_token_{user_id}")
@@ -152,27 +152,28 @@ class UserDeactivateConfirmView(APIView):
             # Determine Protocol (HTTP/HTTPS)
             protocol: str = "https" if request.is_secure() else "http"
 
-            # Generate Reactivation Link
-            reactivation_link: str = f"{protocol}://{current_site.domain}/api/users/reactivate/request/"
+            # Generate Login Link
+            login_link: str = f"{protocol}://{current_site.domain}/api/users/login/"
 
-            # Load Deactivation Email Template
-            deactivation_email_template: str = render_to_string(
-                template_name="users/user_deactivate_success_email.html",
+            # Load Reactivation Email Template
+            reactivation_email_template: str = render_to_string(
+                template_name="users/user_reactivate_success_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,
+                    "username": user.username,
                     "email": user.email,
-                    "reactivation_link": reactivation_link,
+                    "login_link": login_link,
                     "current_year": now_dt.year,
                     "project_name": settings.PROJECT_NAME,
                 },
             )
 
-            # Send Deactivation Email
+            # Send Reactivation Email
             send_mail(
-                subject=f"Your {settings.PROJECT_NAME} Account Has Been Deactivated",
+                subject=f"Your {settings.PROJECT_NAME} Account Has Been Reactivated",
                 message="",
-                html_message=deactivation_email_template,
+                html_message=reactivation_email_template,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
             )
@@ -201,4 +202,4 @@ class UserDeactivateConfirmView(APIView):
 
 
 # Exports
-__all__: list[str] = ["UserDeactivateConfirmView"]
+__all__: list[str] = ["UserReactivateConfirmView"]

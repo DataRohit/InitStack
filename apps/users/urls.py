@@ -12,6 +12,8 @@ from apps.users.views import UserDeleteRequestView
 from apps.users.views import UserEmailChangeConfirmView
 from apps.users.views import UserEmailChangeRequestView
 from apps.users.views import UserLoginView
+from apps.users.views import UserReactivateConfirmView
+from apps.users.views import UserReactivateRequestView
 from apps.users.views import UserRegisterView
 from apps.users.views import UserUsernameChangeConfirmView
 from apps.users.views import UserUsernameChangeRequestView
@@ -75,5 +77,15 @@ urlpatterns: list[URLResolver | URLPattern] = [
         route="delete/confirm/<str:token>/",
         view=UserDeleteConfirmView.as_view(),
         name="delete_confirm",
+    ),
+    path(
+        route="reactivate/request/",
+        view=UserReactivateRequestView.as_view(),
+        name="reactivate_request",
+    ),
+    path(
+        route="reactivate/confirm/<str:token>/",
+        view=UserReactivateConfirmView.as_view(),
+        name="reactivate_confirm",
     ),
 ]

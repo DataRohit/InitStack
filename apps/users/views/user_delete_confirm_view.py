@@ -143,7 +143,7 @@ class UserDeleteConfirmView(APIView):
 
             # Load Deletion Email Template
             deletion_email_template: str = render_to_string(
-                template_name="users/user_delete_success.html",
+                template_name="users/user_delete_success_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,

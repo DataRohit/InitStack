@@ -183,7 +183,7 @@ class UserUsernameChangeRequestView(APIView):
 
             # Load Username Change Email Template
             username_change_email_template: str = render_to_string(
-                template_name="users/user_username_change_request.html",
+                template_name="users/user_username_change_request_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,

@@ -181,7 +181,7 @@ class UserDeactivateRequestView(APIView):
 
             # Load Deactivation Email Template
             deactivation_email_template: str = render_to_string(
-                template_name="users/user_deactivate_request.html",
+                template_name="users/user_deactivate_request_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,

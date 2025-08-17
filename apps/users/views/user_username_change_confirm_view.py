@@ -213,11 +213,13 @@ class UserUsernameChangeConfirmView(APIView):
             protocol: str = "https" if request.is_secure() else "http"
 
             # Generate Reactivation Link
-            reactivation_link: str = f"{protocol}://{current_site.domain}/api/users/reactivate/{reactivation_token}/"
+            reactivation_link: str = (
+                f"{protocol}://{current_site.domain}/api/users/reactivate/confirm/{reactivation_token}/"
+            )
 
             # Load Success Email Template
             success_email_template: str = render_to_string(
-                template_name="users/user_username_change_success.html",
+                template_name="users/user_username_change_success_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,
@@ -239,12 +241,14 @@ class UserUsernameChangeConfirmView(APIView):
 
             # Load Reactivation Email Template
             reactivation_email_template: str = render_to_string(
-                template_name="users/user_reactivate_success_email.html",
+                template_name="users/user_reactivate_request_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,
+                    "username": user.username,
                     "email": user.email,
                     "reactivation_link": reactivation_link,
+                    "reactivation_link_expiry": now_dt + datetime.timedelta(seconds=settings.REACTIVATION_TOKEN_EXPIRY),
                     "current_year": now_dt.year,
                     "project_name": settings.PROJECT_NAME,
                 },
