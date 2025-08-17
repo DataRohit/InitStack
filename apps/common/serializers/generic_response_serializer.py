@@ -82,6 +82,7 @@ class Generic202ResponseSerializer(GenericResponseSerializer):
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
+        message (str): Message For The Response.
     """
 
     # Message Field

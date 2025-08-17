@@ -843,3 +843,51 @@ CHANGE_EMAIL_TOKEN_EXPIRY: int = env.int(
     var="CHANGE_EMAIL_TOKEN_EXPIRY",
     default=1800,
 )
+
+# Set The JWT Deactivation Token Secret
+DEACTIVATION_TOKEN_SECRET: str = env.str(
+    var="DEACTIVATION_TOKEN_SECRET",
+    default="8cf1b6d2df7a055bb09fcc94a2ff75a3b95825fd589cff162e733386c2c79451",
+)
+
+# Set The JWT Deactivation Token Expiry
+DEACTIVATION_TOKEN_EXPIRY: int = env.int(
+    var="DEACTIVATION_TOKEN_EXPIRY",
+    default=1800,
+)
+
+# Set The JWT Reactivation Token Secret
+REACTIVATION_TOKEN_SECRET: str = env.str(
+    var="REACTIVATION_TOKEN_SECRET",
+    default="e4ad915cf40758e630d3d37291b48697b62585e0d4a48e83c2427f84b52a61f2",
+)
+
+# Set The JWT Reactivation Token Expiry
+REACTIVATION_TOKEN_EXPIRY: int = env.int(
+    var="REACTIVATION_TOKEN_EXPIRY",
+    default=1800,
+)
+
+# Set The JWT Deletion Token Secret
+DELETION_TOKEN_SECRET: str = env.str(
+    var="DELETION_TOKEN_SECRET",
+    default="775362bd6de0552f9b5ab4391681a980b1738db451ed2a81bcfad927a78cc088",
+)
+
+# Set The JWT Deletion Token Expiry
+DELETION_TOKEN_EXPIRY: int = env.int(
+    var="DELETION_TOKEN_EXPIRY",
+    default=1800,
+)
+
+# Set The JWT Change Password Token Secret
+CHANGE_PASSWORD_TOKEN_SECRET: str = env.str(
+    var="CHANGE_PASSWORD_TOKEN_SECRET",
+    default="029ed52b4c5d39356944ed59c5dbc89ba84ada153255c75e845abdcf181e317c",
+)
+
+# Set The JWT Change Password Token Expiry
+CHANGE_PASSWORD_TOKEN_EXPIRY: int = env.int(
+    var="CHANGE_PASSWORD_TOKEN_EXPIRY",
+    default=1800,
+)

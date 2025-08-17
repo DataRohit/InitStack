@@ -260,6 +260,7 @@ class UserEmailChangeAcceptedResponseSerializer(Generic202ResponseSerializer):
 
     Attributes:
         status_code (int): HTTP Status Code For The Response.
+        message (str): Message For The Response.
     """
 
     # Message Field

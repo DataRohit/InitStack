@@ -61,7 +61,7 @@ class UserUsernameChangeConfirmView(APIView):
     http_method_names: ClassVar[list[str]] = ["put"]
     object_label: ClassVar[str] = "user_username_change_confirm"
 
-    # Get Method For Username Change Confirmation
+    # Put Method For Username Change Confirmation
     @extend_schema(
         operation_id="User Username Change Confirm",
         request=UserUsernameChangePayloadSerializer,
@@ -186,8 +186,8 @@ class UserUsernameChangeConfirmView(APIView):
             # Get Current Time
             now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
 
-            # Generate Activation Token
-            activation_token: str = jwt.encode(
+            # Generate Reactivation Token
+            reactivation_token: str = jwt.encode(
                 payload={
                     "sub": str(user.id),
                     "iss": slugify(settings.PROJECT_NAME),
@@ -195,15 +195,15 @@ class UserUsernameChangeConfirmView(APIView):
                     "iat": now_dt,
                     "exp": now_dt + datetime.timedelta(seconds=settings.ACTIVATION_TOKEN_EXPIRY),
                 },
-                key=settings.ACTIVATION_TOKEN_SECRET,
+                key=settings.REACTIVATION_TOKEN_SECRET,
                 algorithm="HS256",
             )
 
-            # Cache Activation Token
+            # Cache Reactivation Token
             token_cache.set(
-                key=f"activation_token_{user.id}",
-                value=activation_token,
-                timeout=settings.ACTIVATION_TOKEN_EXPIRY,
+                key=f"reactivation_token_{user.id}",
+                value=reactivation_token,
+                timeout=settings.REACTIVATION_TOKEN_EXPIRY,
             )
 
             # Get Current Site
@@ -212,10 +212,10 @@ class UserUsernameChangeConfirmView(APIView):
             # Determine Protocol (HTTP/HTTPS)
             protocol: str = "https" if request.is_secure() else "http"
 
-            # Generate Activation Link
-            activation_link: str = f"{protocol}://{current_site.domain}/api/users/activate/{activation_token}/"
+            # Generate Reactivation Link
+            reactivation_link: str = f"{protocol}://{current_site.domain}/api/users/reactivate/{reactivation_token}/"
 
-            # Send Success Email
+            # Load Success Email Template
             success_email_template: str = render_to_string(
                 template_name="users/user_username_change_success.html",
                 context={
@@ -227,6 +227,8 @@ class UserUsernameChangeConfirmView(APIView):
                     "project_name": settings.PROJECT_NAME,
                 },
             )
+
+            # Send Success Email
             send_mail(
                 subject=f"Your {settings.PROJECT_NAME} Username Was Updated",
                 message="",
@@ -235,22 +237,24 @@ class UserUsernameChangeConfirmView(APIView):
                 recipient_list=[user.email],
             )
 
-            # Send Activation Email
-            activation_email_template: str = render_to_string(
-                template_name="users/user_registered_email.html",
+            # Load Reactivation Email Template
+            reactivation_email_template: str = render_to_string(
+                template_name="users/user_reactivate_success_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,
                     "email": user.email,
-                    "activation_link": activation_link,
+                    "reactivation_link": reactivation_link,
                     "current_year": now_dt.year,
                     "project_name": settings.PROJECT_NAME,
                 },
             )
+
+            # Send Reactivation Email
             send_mail(
                 subject=f"Re-Activate Your {settings.PROJECT_NAME} Account",
                 message="",
-                html_message=activation_email_template,
+                html_message=reactivation_email_template,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
             )

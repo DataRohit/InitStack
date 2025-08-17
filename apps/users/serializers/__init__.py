@@ -2,6 +2,11 @@
 from apps.users.serializers.base_serializer import UserDetailSerializer
 from apps.users.serializers.user_activate_serializer import UserActivateResponseSerializer
 from apps.users.serializers.user_activate_serializer import UserActivateUnauthorizedErrorResponseSerializer
+from apps.users.serializers.user_deactivate_serializer import UserDeactivateAcceptedResponseSerializer
+from apps.users.serializers.user_deactivate_serializer import UserDeactivateResponseSerializer
+from apps.users.serializers.user_deactivate_serializer import UserDeactivateUnauthorizedErrorResponseSerializer
+from apps.users.serializers.user_delete_serializer import UserDeleteAcceptedResponseSerializer
+from apps.users.serializers.user_delete_serializer import UserDeleteUnauthorizedErrorResponseSerializer
 from apps.users.serializers.user_email_change_serializer import UserEmailChangeAcceptedResponseSerializer
 from apps.users.serializers.user_email_change_serializer import UserEmailChangeBadRequestErrorResponseSerializer
 from apps.users.serializers.user_email_change_serializer import UserEmailChangePayloadSerializer
@@ -25,6 +30,11 @@ __all__: list[str] = [
     "UserActivateResponseSerializer",
     "UserActivateUnauthorizedErrorResponseSerializer",
     "UserCreateBadRequestErrorResponseSerializer",
+    "UserDeactivateAcceptedResponseSerializer",
+    "UserDeactivateResponseSerializer",
+    "UserDeactivateUnauthorizedErrorResponseSerializer",
+    "UserDeleteAcceptedResponseSerializer",
+    "UserDeleteUnauthorizedErrorResponseSerializer",
     "UserDetailSerializer",
     "UserEmailChangeAcceptedResponseSerializer",
     "UserEmailChangeBadRequestErrorResponseSerializer",

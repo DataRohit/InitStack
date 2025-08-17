@@ -72,6 +72,11 @@ class GenericJSONRenderer(JSONRenderer):
         # Get Status Code From Response
         status_code: int = response.status_code
 
+        # If Status Code is 204
+        if status_code == 204:  # noqa: PLR2004
+            # Return Empty Response
+            return b""
+
         # If Message In Data
         if "message" in data:
             # Return The Message Response

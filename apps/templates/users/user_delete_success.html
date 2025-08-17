@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Account Deletion Confirmation</title>
+        <style>
+            body {
+                font-family: 'Courier New', monospace;
+                line-height: 1.5;
+                color: #222;
+                background: #fff;
+                margin: 0;
+                padding: 0;
+                text-align: center;
+            }
+
+            .container {
+                max-width: 600px;
+                margin: 0 auto;
+                padding: 2rem;
+            }
+
+            .header {
+                padding-bottom: 1.5rem;
+                border-bottom: 1px solid #eee;
+            }
+
+            .content {
+                padding: 1.5rem 0;
+            }
+
+            .footer {
+                margin-top: 2rem;
+                font-size: 0.8rem;
+                color: #777;
+                border-top: 1px solid #eee;
+                padding-top: 1rem;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>Goodbye {{ first_name }} {{ last_name }}</h1>
+            </div>
+            <div class="content">
+                <p>
+                    Your Account With Email <strong>{{ email }}</strong> Has Been Successfully Deleted.
+                </p>
+                <p>All Your Data Has Been Permanently Removed From Our Systems.</p>
+                <p>You Will No Longer Be Able To Access Your Account Or Receive Communications From Us.</p>
+                <p>
+                    <strong>Note:</strong> This Action Cannot Be Undone.
+                </p>
+            </div>
+            <div class="footer">
+                <p>{{ current_year }} {{ project_name }}. All Rights Reserved.</p>
+            </div>
+        </div>
+    </body>
+</html>
