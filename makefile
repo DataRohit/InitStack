@@ -46,6 +46,8 @@ help:
 	@echo ""
 	@printf "${GREEN}Code Analysis:${NC}\n"
 	@echo "  sonar-scan      - Run SonarQube Analysis (Requires SONAR_TOKEN Env Var)"
+	@echo "  ruff-check      - Run Ruff Linter In Check Mode"
+	@echo "  ruff-lint       - Run Ruff Linter With Auto-Fix"
 	@echo ""
 	@printf "${GREEN}Podman:${NC}\n"
 	@echo "  podman-build    - Build All Services"
@@ -194,8 +196,24 @@ clean-all:
 	@printf "${GREEN}Cleanup Completed Successfully!${NC}\n"
 	@echo ""
 
+# Ruff-Check Target: Run Ruff Linter In Check Mode
+ruff-check:
+	@echo ""
+	@printf "${YELLOW}Running Ruff Linter In Check Mode...${NC}\n"
+	ruff check .
+	@printf "${GREEN}Ruff Check Completed!${NC}\n"
+	@echo ""
+
+# Ruff-Lint Target: Run Ruff Linter With Auto-Fix
+ruff-lint:
+	@echo ""
+	@printf "${YELLOW}Running Ruff Linter With Auto-Fix...${NC}\n"
+	ruff check --fix .
+	@printf "${GREEN}Ruff Lint Completed!${NC}\n"
+	@echo ""
+
 # Phony Targets Declaration
-.PHONY: help sonar-scan clean-all \
+.PHONY: help sonar-scan ruff-check ruff-lint clean-all \
 	podman-build podman-up podman-restart podman-clean \
 	podman-down \
 	docker-build docker-up docker-restart docker-clean docker-down

@@ -166,7 +166,7 @@ Ports And Mappings Are Defined In `docker-compose.yml`.
 Run Linting / Type Checking / Tests Locally:
 
 ```bash
-ruff check .
+make ruff-check  # or 'make ruff-lint' to auto-fix issues
 mypy .
 pytest -q
 ```
@@ -177,7 +177,10 @@ Ruff/Mypy/Pytest Are Configured In `pyproject.toml`.
 
 - **help** — Show This Help Message
 
-- **sonar-scan** — Run SonarQube Analysis (Requires `SONAR_TOKEN` Env Var)
+- **Code Analysis:**
+  - `ruff-check` — Run Ruff Linter In Check Mode
+  - `ruff-lint` — Run Ruff Linter With Auto-Fix
+  - `sonar-scan` — Run SonarQube Analysis (Requires `SONAR_TOKEN` Env Var)
 
 - **Docker:**
   - `docker-build` — Build All Services
