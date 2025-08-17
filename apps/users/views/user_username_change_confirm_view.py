@@ -165,6 +165,9 @@ class UserUsernameChangeConfirmView(APIView):
             # Get User
             user: User = User.objects.get(id=user_id)
 
+            # Store Old Username
+            old_username: str = user.username
+
             # Update Username
             user.username = new_username
             user.save(update_fields=["username"])
@@ -176,8 +179,32 @@ class UserUsernameChangeConfirmView(APIView):
             token_cache.delete(f"access_token_{user_id}")
             token_cache.delete(f"refresh_token_{user_id}")
 
+            # Deactivate User
+            user.is_active = False
+            user.save(update_fields=["is_active"])
+
             # Get Current Time
             now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
+
+            # Generate Activation Token
+            activation_token: str = jwt.encode(
+                payload={
+                    "sub": str(user.id),
+                    "iss": slugify(settings.PROJECT_NAME),
+                    "aud": slugify(settings.PROJECT_NAME),
+                    "iat": now_dt,
+                    "exp": now_dt + datetime.timedelta(seconds=settings.ACTIVATION_TOKEN_EXPIRY),
+                },
+                key=settings.ACTIVATION_TOKEN_SECRET,
+                algorithm="HS256",
+            )
+
+            # Cache Activation Token
+            token_cache.set(
+                key=f"activation_token_{user.id}",
+                value=activation_token,
+                timeout=settings.ACTIVATION_TOKEN_EXPIRY,
+            )
 
             # Get Current Site
             current_site: Site = Site.objects.get_current()
@@ -185,28 +212,45 @@ class UserUsernameChangeConfirmView(APIView):
             # Determine Protocol (HTTP/HTTPS)
             protocol: str = "https" if request.is_secure() else "http"
 
-            # Generate Login Link
-            login_link: str = f"{protocol}://{current_site.domain}/login/"
+            # Generate Activation Link
+            activation_link: str = f"{protocol}://{current_site.domain}/api/users/activate/{activation_token}/"
 
-            # Load Success Email Template
+            # Send Success Email
             success_email_template: str = render_to_string(
                 template_name="users/user_username_change_success.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,
-                    "username": user.username,
-                    "email": user.email,
-                    "login_link": login_link,
+                    "old_username": old_username,
+                    "new_username": new_username,
                     "current_year": now_dt.year,
                     "project_name": settings.PROJECT_NAME,
                 },
             )
-
-            # Send Success Email
             send_mail(
                 subject=f"Your {settings.PROJECT_NAME} Username Was Updated",
                 message="",
                 html_message=success_email_template,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+            )
+
+            # Send Activation Email
+            activation_email_template: str = render_to_string(
+                template_name="users/user_registered_email.html",
+                context={
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "email": user.email,
+                    "activation_link": activation_link,
+                    "current_year": now_dt.year,
+                    "project_name": settings.PROJECT_NAME,
+                },
+            )
+            send_mail(
+                subject=f"Re-Activate Your {settings.PROJECT_NAME} Account",
+                message="",
+                html_message=activation_email_template,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 recipient_list=[user.email],
             )

@@ -164,6 +164,9 @@ class UserEmailChangeConfirmView(APIView):
             # Get User
             user: User = User.objects.get(id=user_id)
 
+            # Store Old Email
+            old_email: str = user.email
+
             # Update Email
             user.email = new_email
             user.save(update_fields=["email"])
@@ -211,26 +214,48 @@ class UserEmailChangeConfirmView(APIView):
             # Generate Activation Link
             activation_link: str = f"{protocol}://{current_site.domain}/api/users/activate/{activation_token}/"
 
+            # Load Success Email Template
+            success_email_template: str = render_to_string(
+                template_name="users/user_email_change_success.html",
+                context={
+                    "first_name": user.first_name,
+                    "last_name": user.last_name,
+                    "old_email": old_email,
+                    "new_email": new_email,
+                    "current_year": now_dt.year,
+                    "project_name": settings.PROJECT_NAME,
+                },
+            )
+
+            # Send Success Email To Old Email
+            send_mail(
+                subject=f"Your {settings.PROJECT_NAME} Email Was Updated",
+                message="",
+                html_message=success_email_template,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[old_email],
+            )
+
             # Load Activation Email Template
             activation_email_template: str = render_to_string(
                 template_name="users/user_registered_email.html",
                 context={
                     "first_name": user.first_name,
                     "last_name": user.last_name,
-                    "email": user.email,
+                    "email": new_email,
                     "activation_link": activation_link,
                     "current_year": now_dt.year,
                     "project_name": settings.PROJECT_NAME,
                 },
             )
 
-            # Send Activation Email
+            # Send Activation Email To New Email
             send_mail(
                 subject=f"Re-Activate Your {settings.PROJECT_NAME} Account",
                 message="",
                 html_message=activation_email_template,
                 from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
+                recipient_list=[new_email],
             )
 
             # Serialize User Data
