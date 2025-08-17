@@ -12,6 +12,7 @@ from apps.users.views import UserDeleteRequestView
 from apps.users.views import UserEmailChangeConfirmView
 from apps.users.views import UserEmailChangeRequestView
 from apps.users.views import UserLoginView
+from apps.users.views import UserMeView
 from apps.users.views import UserReactivateConfirmView
 from apps.users.views import UserReactivateRequestView
 from apps.users.views import UserRegisterView
@@ -99,5 +100,10 @@ urlpatterns: list[URLResolver | URLPattern] = [
         route="reset-password/confirm/<str:token>/",
         view=UserResetPasswordConfirmView.as_view(),
         name="reset_password_confirm",
+    ),
+    path(
+        route="me/",
+        view=UserMeView.as_view(),
+        name="me",
     ),
 ]

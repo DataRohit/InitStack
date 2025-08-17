@@ -23,6 +23,8 @@ from apps.users.serializers.user_login_serializer import UserLoginBadRequestErro
 from apps.users.serializers.user_login_serializer import UserLoginPayloadSerializer
 from apps.users.serializers.user_login_serializer import UserLoginResponseSerializer
 from apps.users.serializers.user_login_serializer import UserLoginUnauthorizedErrorResponseSerializer
+from apps.users.serializers.user_me_serializer import UserMeResponseSerializer
+from apps.users.serializers.user_me_serializer import UserMeUnauthorizedErrorResponseSerializer
 from apps.users.serializers.user_reactivate_serializer import UserReactivateAcceptedResponseSerializer
 from apps.users.serializers.user_reactivate_serializer import UserReactivateBadRequestErrorResponseSerializer
 from apps.users.serializers.user_reactivate_serializer import UserReactivatePayloadSerializer
@@ -78,6 +80,8 @@ __all__: list[str] = [
     "UserLoginPayloadSerializer",
     "UserLoginResponseSerializer",
     "UserLoginUnauthorizedErrorResponseSerializer",
+    "UserMeResponseSerializer",
+    "UserMeUnauthorizedErrorResponseSerializer",
     "UserReactivateAcceptedResponseSerializer",
     "UserReactivateBadRequestErrorResponseSerializer",
     "UserReactivatePayloadSerializer",
