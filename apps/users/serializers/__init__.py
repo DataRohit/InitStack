@@ -31,6 +31,19 @@ from apps.users.serializers.user_reactivate_serializer import UserReactivateUnau
 from apps.users.serializers.user_register_serializer import UserCreateBadRequestErrorResponseSerializer
 from apps.users.serializers.user_register_serializer import UserRegisterPayloadSerializer
 from apps.users.serializers.user_register_serializer import UserRegisterResponseSerializer
+from apps.users.serializers.user_reset_password_serializer import (
+    UserResetPasswordConfirmBadRequestErrorResponseSerializer,
+)
+from apps.users.serializers.user_reset_password_serializer import UserResetPasswordConfirmPayloadSerializer
+from apps.users.serializers.user_reset_password_serializer import UserResetPasswordConfirmResponseSerializer
+from apps.users.serializers.user_reset_password_serializer import (
+    UserResetPasswordConfirmUnauthorizedErrorResponseSerializer,
+)
+from apps.users.serializers.user_reset_password_serializer import UserResetPasswordRequestAcceptedResponseSerializer
+from apps.users.serializers.user_reset_password_serializer import (
+    UserResetPasswordRequestBadRequestErrorResponseSerializer,
+)
+from apps.users.serializers.user_reset_password_serializer import UserResetPasswordRequestPayloadSerializer
 from apps.users.serializers.user_username_change_serializer import UserUsernameChangeAcceptedResponseSerializer
 from apps.users.serializers.user_username_change_serializer import UserUsernameChangeBadRequestErrorResponseSerialzier
 from apps.users.serializers.user_username_change_serializer import (
@@ -72,6 +85,14 @@ __all__: list[str] = [
     "UserReactivateUnauthorizedErrorResponseSerializer",
     "UserRegisterPayloadSerializer",
     "UserRegisterResponseSerializer",
+    "UserResetPasswordConfirmBadRequestErrorResponseSerializer",
+    "UserResetPasswordConfirmPayloadSerializer",
+    "UserResetPasswordConfirmResponseSerializer",
+    "UserResetPasswordConfirmUnauthorizedErrorResponseSerializer",
+    "UserResetPasswordRequestAcceptedResponseSerializer",
+    "UserResetPasswordRequestBadRequestErrorResponseSerializer",
+    "UserResetPasswordRequestPayloadSerializer",
+    "UserResetPasswordRequestPayloadSerializer",
     "UserUsernameChangeAcceptedResponseSerializer",
     "UserUsernameChangeBadRequestErrorResponseSerialzier",
     "UserUsernameChangeConfirmUnauthorizedErrorResponseSerializer",

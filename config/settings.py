@@ -880,14 +880,14 @@ DELETION_TOKEN_EXPIRY: int = env.int(
     default=1800,
 )
 
-# Set The JWT Change Password Token Secret
-CHANGE_PASSWORD_TOKEN_SECRET: str = env.str(
-    var="CHANGE_PASSWORD_TOKEN_SECRET",
+# Set The JWT Reset Password Token Secret
+RESET_PASSWORD_TOKEN_SECRET: str = env.str(
+    var="RESET_PASSWORD_TOKEN_SECRET",
     default="029ed52b4c5d39356944ed59c5dbc89ba84ada153255c75e845abdcf181e317c",
 )
 
-# Set The JWT Change Password Token Expiry
-CHANGE_PASSWORD_TOKEN_EXPIRY: int = env.int(
-    var="CHANGE_PASSWORD_TOKEN_EXPIRY",
+# Set The JWT Reset Password Token Expiry
+RESET_PASSWORD_TOKEN_EXPIRY: int = env.int(
+    var="RESET_PASSWORD_TOKEN_EXPIRY",
     default=1800,
 )
