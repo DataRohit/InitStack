@@ -16,9 +16,9 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 
 # Local Imports
-from apps.common.authentication.jwt_authentication import JWTAuthentication
+from apps.common.authentication import JWTAuthentication
 from apps.common.renderers import GenericJSONRenderer
-from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
+from apps.common.serializers import Generic500ResponseSerializer
 from apps.users.models import User
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserMeResponseSerializer

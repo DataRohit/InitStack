@@ -24,7 +24,7 @@ from slugify import slugify
 
 # Local Imports
 from apps.common.renderers import GenericJSONRenderer
-from apps.common.serializers.generic_response_serializer import Generic500ResponseSerializer
+from apps.common.serializers import Generic500ResponseSerializer
 from apps.users.models import User
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserLoginBadRequestErrorResponseSerializer

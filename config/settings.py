@@ -24,6 +24,9 @@ env = environ.Env()
 # Set Project Name
 PROJECT_NAME: str = "InitStack"
 
+# Set Project Version
+PROJECT_VERSION: str = "0.1.0"
+
 # Set The Debug Mode
 DEBUG: bool = env.bool(
     var="DJANGO_DEBUG",
@@ -140,6 +143,7 @@ THIRD_PARTY_APPS: list[str] = [
 # Set The Local Apps
 LOCAL_APPS: list[str] = [
     "apps.common",
+    "apps.system",
     "apps.users",
 ]
 
@@ -564,7 +568,7 @@ CORS_ALLOW_HEADERS: list[str] = [
 SPECTACULAR_SETTINGS: dict[str, str] = {
     "TITLE": "InitStack API",
     "DESCRIPTION": "A High-Performance, Containerized Django Application With Real-Time Processing, Search, Monitoring, And Distributed Task Orchestration Powered By A Modern Cloud-Native Stack.",  # noqa: E501
-    "VERSION": "1.0.0",
+    "VERSION": PROJECT_VERSION,
     "CONTACT": {
         "name": "Rohit Vilas Ingole",
         "url": "https://github.com/datarohit/initstack",
@@ -707,6 +711,12 @@ SENTRY_LOG_LEVEL: int = env.int(
     default=logging.INFO,
 )
 
+# Set The Sentry Environment
+SENTRY_ENVIRONMENT: str = env.str(
+    var="DJANGO_SENTRY_ENVIRONMENT",
+    default="development",
+)
+
 # Set The Sentry Logging
 sentry_logging: LoggingIntegration = LoggingIntegration(
     level=SENTRY_LOG_LEVEL,
@@ -726,10 +736,7 @@ integrations: list[object] = [
 sentry_sdk.init(
     dsn=SENTRY_DSN,
     integrations=integrations,
-    environment=env.str(
-        var="SENTRY_ENVIRONMENT",
-        default="production",
-    ),
+    environment=SENTRY_ENVIRONMENT,
     traces_sample_rate=env.float(
         var="SENTRY_TRACES_SAMPLE_RATE",
         default=0.0,
@@ -763,7 +770,7 @@ OTEL_SERVICE_ENVIRONMENT: str = env.str(
 # Set The OpenTelemetry Service Version
 OTEL_SERVICE_VERSION: str = env.str(
     var="OTEL_SERVICE_VERSION",
-    default="0.1.0",
+    default=PROJECT_VERSION,
 )
 
 # Set The OpenTelemetry Service Instance ID

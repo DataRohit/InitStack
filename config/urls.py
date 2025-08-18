@@ -65,6 +65,10 @@ if settings.DEBUG:
 # App URLs
 urlpatterns += [
     path(
+        route="api/system/",
+        view=include("apps.system.urls", namespace="system"),
+    ),
+    path(
         route="api/users/",
         view=include("apps.users.urls", namespace="users"),
     ),
