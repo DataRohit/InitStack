@@ -14,9 +14,22 @@ receivers:
                 # HTTP Endpoint
                 endpoint: "0.0.0.0:4318"
 
+    # Prometheus
+    prometheus:
+        # Configuration
+        config:
+            # Scrape Configurations
+            scrape_configs:
+                # Job Name
+                - job_name: "otel-collector"
+                  # Static Configurations
+                  static_configs:
+                      # Targets
+                      - targets: ["localhost:8888"]
+
 # Exporters
 exporters:
-    # OpenTelemetry Protocol (OTLP)
+    # OpenTelemetry Protocol (OTLP) For Traces
     otlp:
         # Jaeger Collector Service Endpoint
         endpoint: jaeger-collector-service:4317
@@ -26,23 +39,91 @@ exporters:
             # Insecure TLS
             insecure: true
 
-    # Prometheus Exporter
+    # Prometheus Exporter For Metrics
     prometheus:
         # Prometheus Endpoint
         endpoint: "0.0.0.0:8889"
+
+        # Metric Expiration Time
+        metric_expiration: 180m
+
+        # Resource to telemetry conversion
+        resource_to_telemetry_conversion:
+            # Disable Resource to Telemetry Conversion
+            enabled: false
+
+    # Debug Exporter
+    debug:
+        # Verbosity level
+        verbosity: detailed
 
 # Connectors
 connectors:
     # Span Metrics Connector
     spanmetrics:
+        # Dimensions To Add To Metrics
+        dimensions:
+            - name: http.method
+              default: GET
+            - name: http.status_code
+
+        # Exclude Dimensions
+        dimensions_cache_size: 1000
+
+        # Aggregation Temporality
+        aggregation_temporality: "AGGREGATION_TEMPORALITY_CUMULATIVE"
 
 # Processors
 processors:
     # Batch Processor
     batch:
+        # Timeout
+        timeout: 1s
+        # Send Batch Size
+        send_batch_size: 1024
+        # Send Batch Max Size
+        send_batch_max_size: 2048
+
+    # Memory Limiter
+    memory_limiter:
+        # Check Interval
+        check_interval: 1s
+        # Limit In MiB
+        limit_mib: 256
+
+    # Resource Processor To Add Additional Attributes
+    resource:
+        # Attributes
+        attributes:
+            - key: service.instance.id
+              from_attribute: service.instance.id
+              action: upsert
+            - key: deployment.environment
+              from_attribute: deployment.environment
+              action: upsert
+
+# Extensions
+extensions:
+    # Health Check Extension
+    health_check:
+        # Endpoint
+        endpoint: "0.0.0.0:13133"
+
+    # Performance Profiler
+    pprof:
+        # Endpoint
+        endpoint: "0.0.0.0:1777"
+
+    # zPages extension
+    zpages:
+        # Endpoint
+        endpoint: "0.0.0.0:55679"
 
 # Service
 service:
+    # Extensions
+    extensions: [health_check, pprof, zpages]
+
     # Pipelines
     pipelines:
         # Traces Pipeline
@@ -51,15 +132,40 @@ service:
             receivers: [otlp]
 
             # Processors
-            processors: [batch]
+            processors: [memory_limiter, resource, batch]
 
             # Exporters
             exporters: [spanmetrics, otlp]
 
-        # Metrics Pipeline
+        # Metrics Pipeline from application
+        metrics:
+            # Receivers
+            receivers: [otlp]
+
+            # Processors
+            processors: [memory_limiter, resource, batch]
+
+            # Exporters
+            exporters: [prometheus]
+
+        # Metrics Pipeline from span metrics connector
         metrics/spanmetrics:
             # Receivers
             receivers: [spanmetrics]
 
+            # Processors
+            processors: [memory_limiter, resource, batch]
+
             # Exporters
             exporters: [prometheus]
+
+        # Logs Pipeline
+        logs:
+            # Receivers
+            receivers: [otlp]
+
+            # Processors
+            processors: [memory_limiter, resource, batch]
+
+            # Exporters
+            exporters: [debug]

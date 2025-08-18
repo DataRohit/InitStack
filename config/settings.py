@@ -746,7 +746,7 @@ sentry_sdk.init(
 # Set The OpenTelemetry Exporter OTLP Endpoint
 OTEL_EXPORTER_OTLP_ENDPOINT: str = env.str(
     var="OTEL_EXPORTER_OTLP_ENDPOINT",
-    default="http://otel-collector-service:4318/v1/traces",
+    default="http://otel-collector-service:4318",
 )
 
 # Set The OpenTelemetry Service Name

@@ -1,17 +1,50 @@
 # Global Configuration
 global:
-    # Scrape Interval
     scrape_interval: 5s
-
-    # Evaluation Interval
     evaluation_interval: 5s
+    external_labels:
+        cluster: "initstack"
+        environment: "development"
 
 # Scrape Configurations
 scrape_configs:
-    # Aggregated Trace Metrics Job
-    - job_name: aggregated-trace-metrics
-
-      # Static Configurations
+    # OpenTelemetry Collector Metrics
+    - job_name: "otel-collector"
       static_configs:
-          # Targets
           - targets: ["otel-collector-service:8889"]
+      scrape_interval: 5s
+      metrics_path: /metrics
+      relabel_configs:
+          - source_labels: [__address__]
+            target_label: instance
+            replacement: "otel-collector"
+          - target_label: job
+            replacement: "otel-collector"
+
+    # Aggregated Trace Metrics Job
+    - job_name: "aggregated-trace-metrics"
+      static_configs:
+          - targets: ["otel-collector-service:8889"]
+      scrape_interval: 5s
+      metrics_path: /metrics
+      metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: "(calls|latency|duration).*"
+            action: keep
+      relabel_configs:
+          - target_label: job
+            replacement: "span-metrics"
+
+    # Application Metrics Job
+    - job_name: "application-metrics"
+      static_configs:
+          - targets: ["otel-collector-service:8889"]
+      scrape_interval: 5s
+      metrics_path: /metrics
+      metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: "(http_requests|django_|user_|login_|database_|celery_|cache_).*"
+            action: keep
+      relabel_configs:
+          - target_label: job
+            replacement: "django-app"
