@@ -133,6 +133,10 @@ services:
             - initstack
         restart: unless-stopped
         depends_on:
+            mailpit-service:
+                condition: service_healthy
+            otel-collector-service:
+                condition: service_healthy
             celery-worker-service:
                 condition: service_started
             celery-beat-service:
@@ -157,6 +161,10 @@ services:
             - initstack
         restart: unless-stopped
         depends_on:
+            mailpit-service:
+                condition: service_healthy
+            otel-collector-service:
+                condition: service_healthy
             rabbitmq-service:
                 condition: service_healthy
             elasticsearch-service:
@@ -177,6 +185,10 @@ services:
             - initstack
         restart: unless-stopped
         depends_on:
+            mailpit-service:
+                condition: service_healthy
+            otel-collector-service:
+                condition: service_healthy
             rabbitmq-service:
                 condition: service_healthy
             elasticsearch-service:
@@ -208,17 +220,24 @@ services:
             start_period: 30s
 
     otel-collector-service:
-        image: otel/opentelemetry-collector-contrib:latest
+        build:
+            context: .
+            dockerfile: ./compose/otel-collector/dockerfile
+        image: otel-collector-service:latest
         container_name: otel-collector-service
-        command:
-            - "--config=/conf/config.yaml"
         ports:
             - "13133:13133"
         volumes:
-            - ./compose/otel-collector/config.yaml:/conf/config.yaml:ro
+            - ./compose/otel-collector/config.yaml:/etc/otelcol-contrib/config.yaml:ro
         networks:
             - initstack
         restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:13133"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
         depends_on:
             jaeger-collector-service:
                 condition: service_started

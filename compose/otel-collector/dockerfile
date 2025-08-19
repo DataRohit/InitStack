@@ -1,0 +1,22 @@
+# Use Official OpenTelemetry Collector Image
+FROM otel/opentelemetry-collector-contrib:latest AS binary
+
+# Use Ubuntu as the base image to add extra tools
+FROM ubuntu:latest
+
+# Install System Dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl wget make ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy Collector Binary
+COPY --from=binary /otelcol-contrib /otelcol-contrib
+
+# Make Binary Executable
+RUN chmod +x /otelcol-contrib
+
+# Set Entry Point
+ENTRYPOINT ["/otelcol-contrib"]
+
+# Run the Collector with its Configuration File
+CMD ["--config", "/etc/otelcol-contrib/config.yaml"]
