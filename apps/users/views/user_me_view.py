@@ -1,5 +1,6 @@
 # Standard Library Imports
 import logging
+import time
 from typing import Any
 from typing import ClassVar
 
@@ -17,9 +18,13 @@ from rest_framework.views import APIView
 
 # Local Imports
 from apps.common.authentication import JWTAuthentication
+from apps.common.opentelemetry.base import record_api_error
+from apps.common.opentelemetry.base import record_http_request
+from apps.common.opentelemetry.base import record_user_action
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers import Generic500ResponseSerializer
 from apps.users.models import User
+from apps.users.opentelemetry.views.user_me_metrics import record_me_retrieved
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserMeResponseSerializer
 from apps.users.serializers import UserMeUnauthorizedErrorResponseSerializer
@@ -78,12 +83,28 @@ class UserMeView(APIView):
             Exception: For Any Unexpected Errors During User Data Retrieval.
         """
 
+        # Start Request Timer
+        start_time: float = time.perf_counter()
+
         try:
             # Get Current User
             user: User = request.user
 
             # Serialize User Data
             user_data: dict[str, Any] = UserDetailSerializer(user).data
+
+            # Record Success Metrics
+            duration_200: float = time.perf_counter() - start_time
+            record_user_action(action_type="me", success=True)
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_200_OK),
+                duration=duration_200,
+            )
+
+            # Record Me Retrieved
+            record_me_retrieved()
 
             # Return Success Response
             return Response(
@@ -97,6 +118,20 @@ class UserMeView(APIView):
 
             # Log The Exception
             logger.exception(log_message)
+
+            # Record API Error And HTTP Metrics
+            record_api_error(endpoint=request.path, error_type=e.__class__.__name__)
+
+            duration_500: float = time.perf_counter() - start_time
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_500_INTERNAL_SERVER_ERROR),
+                duration=duration_500,
+            )
+
+            # Record User Action Failure
+            record_user_action(action_type="me", success=False)
 
             # Return Error Response
             return Response(

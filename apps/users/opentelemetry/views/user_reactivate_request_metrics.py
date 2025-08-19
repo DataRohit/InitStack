@@ -1,0 +1,113 @@
+# Standard Library Imports
+from typing import Any
+
+# Third Party Imports
+from opentelemetry import metrics
+from opentelemetry.metrics import Counter
+from opentelemetry.metrics import Histogram
+
+# Local Imports
+from config.opentelemetry import get_meter
+
+# Get Meter Instance
+meter: metrics.Meter = get_meter()
+
+
+# Reactivate Request Token Reused Counter
+user_reactivate_request_token_reused_total: Counter = meter.create_counter(
+    name="user.reactivate_request.token.reused.total",
+    description="Total Number Of Reactivate Request Tokens Reused From Cache",
+    unit="1",
+)
+
+
+# Reactivate Request Token Generated Counter
+user_reactivate_request_token_generated_total: Counter = meter.create_counter(
+    name="user.reactivate_request.token.generated.total",
+    description="Total Number Of New Reactivate Request Tokens Generated",
+    unit="1",
+)
+
+
+# Reactivate Request Initiated Counter
+user_reactivate_request_initiated_total: Counter = meter.create_counter(
+    name="user.reactivate_request.initiated.total",
+    description="Total Number Of Successful Reactivate Requests Initiated",
+    unit="1",
+)
+
+
+# Email Template Render Duration Histogram
+user_reactivate_request_email_template_render_duration: Histogram = meter.create_histogram(
+    name="user.reactivate_request.email_template.render.duration",
+    description="Duration To Render Reactivate Request Email Template",
+    unit="s",
+)
+
+
+# Record Token Reused Function
+def record_token_reused() -> None:
+    """
+    Record Reactivate Request Token Reuse.
+    """
+
+    # Create Labels
+    labels: dict[str, Any] = {}
+
+    # Add Counter Value
+    user_reactivate_request_token_reused_total.add(1, labels)
+
+
+# Record Token Generated Function
+def record_token_generated() -> None:
+    """
+    Record New Reactivate Request Token Generation.
+    """
+
+    # Create Labels
+    labels: dict[str, Any] = {}
+
+    # Add Counter Value
+    user_reactivate_request_token_generated_total.add(1, labels)
+
+
+# Record Request Initiated Function
+def record_reactivate_request_initiated() -> None:
+    """
+    Record Successful Reactivate Request Initiation.
+    """
+
+    # Create Labels
+    labels: dict[str, Any] = {}
+
+    # Add Counter Value
+    user_reactivate_request_initiated_total.add(1, labels)
+
+
+# Record Email Template Render Duration Function
+def record_email_template_render_duration(duration: float) -> None:
+    """
+    Record Email Template Render Duration.
+
+    Args:
+        duration (float): Duration In Seconds.
+    """
+
+    # Create Labels
+    labels: dict[str, Any] = {}
+
+    # Record Histogram Value
+    user_reactivate_request_email_template_render_duration.record(duration, labels)
+
+
+# Exports
+__all__: list[str] = [
+    "record_email_template_render_duration",
+    "record_reactivate_request_initiated",
+    "record_token_generated",
+    "record_token_reused",
+    "user_reactivate_request_email_template_render_duration",
+    "user_reactivate_request_initiated_total",
+    "user_reactivate_request_token_generated_total",
+    "user_reactivate_request_token_reused_total",
+]

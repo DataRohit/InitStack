@@ -1,6 +1,9 @@
+# ruff: noqa: PLR0915, S106
+
 # Standard Library Imports
 import datetime
 import logging
+import time
 from typing import Any
 from typing import ClassVar
 
@@ -26,9 +29,19 @@ from slugify import slugify
 
 # Local Imports
 from apps.common.authentication import JWTAuthentication
+from apps.common.opentelemetry.base import record_api_error
+from apps.common.opentelemetry.base import record_cache_operation
+from apps.common.opentelemetry.base import record_email_sent
+from apps.common.opentelemetry.base import record_http_request
+from apps.common.opentelemetry.base import record_token_validation
+from apps.common.opentelemetry.base import record_user_action
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers import Generic500ResponseSerializer
 from apps.users.models import User
+from apps.users.opentelemetry.views.user_deactivate_request_metrics import record_deactivate_request_initiated
+from apps.users.opentelemetry.views.user_deactivate_request_metrics import record_email_template_render_duration
+from apps.users.opentelemetry.views.user_deactivate_request_metrics import record_token_generated
+from apps.users.opentelemetry.views.user_deactivate_request_metrics import record_token_reused
 from apps.users.serializers import UserDeactivateRequestAcceptedResponseSerializer
 from apps.users.serializers import UserDeactivateRequestUnauthorizedErrorResponseSerializer
 
@@ -86,6 +99,9 @@ class UserDeactivateRequestView(APIView):
             Exception: For Any Unexpected Errors During Deactivate Request.
         """
 
+        # Start Request Timer
+        start_time: float = time.perf_counter()
+
         try:
             # Get Token Cache
             token_cache: BaseCache = caches["token_cache"]
@@ -101,6 +117,9 @@ class UserDeactivateRequestView(APIView):
 
             # Get Cached Token
             cached_token: str | None = token_cache.get(cache_key)
+
+            # Record Cache Get Operation
+            record_cache_operation(operation="get", cache_type="token_cache", success=bool(cached_token))
 
             # Get Current Time
             now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
@@ -139,7 +158,13 @@ class UserDeactivateRequestView(APIView):
                         issuer=slugify(settings.PROJECT_NAME),
                     )
 
+                    # Record Token Validation Success
+                    record_token_validation(token_type="deactivation", success=True)
+
                 except jwt.InvalidTokenError:
+                    # Record Token Validation Failure
+                    record_token_validation(token_type="deactivation", success=False)
+
                     # Return False If Token Is Invalid
                     return False
 
@@ -167,8 +192,18 @@ class UserDeactivateRequestView(APIView):
                 # Cache New Token
                 token_cache.set(cache_key, new_token, timeout=settings.DEACTIVATION_TOKEN_EXPIRY)
 
+                # Record Cache Set Operation
+                record_cache_operation(operation="set", cache_type="token_cache", success=True)
+
                 # Update Cached Token
                 cached_token = new_token
+
+                # Record Token Generated
+                record_token_generated()
+
+            else:
+                # Record Token Reused
+                record_token_reused()
 
             # Get Current Site
             current_site: Site = Site.objects.get_current()
@@ -180,6 +215,7 @@ class UserDeactivateRequestView(APIView):
             deactivation_link: str = f"{protocol}://{current_site.domain}/api/users/deactivate/confirm/{cached_token}/"
 
             # Load Deactivation Email Template
+            template_start: float = time.perf_counter()
             deactivation_email_template: str = render_to_string(
                 template_name="users/user_deactivate_request_email.html",
                 context={
@@ -193,14 +229,40 @@ class UserDeactivateRequestView(APIView):
                     "project_name": settings.PROJECT_NAME,
                 },
             )
+            template_duration: float = time.perf_counter() - template_start
+            record_email_template_render_duration(duration=template_duration)
 
-            # Send Deactivation Email
-            send_mail(
-                subject=f"Deactivate Your {settings.PROJECT_NAME} Account",
-                message="",
-                html_message=deactivation_email_template,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
+            try:
+                # Send Deactivation Email
+                send_mail(
+                    subject=f"Deactivate Your {settings.PROJECT_NAME} Account",
+                    message="",
+                    html_message=deactivation_email_template,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                )
+
+                # Record Email Sent Success
+                record_email_sent(email_type="deactivation_request", success=True)
+
+            except Exception:
+                # Record Email Sent Failure
+                record_email_sent(email_type="deactivation_request", success=False)
+
+                # Raise Exception
+                raise
+
+            # Record Deactivate Request Initiated
+            record_deactivate_request_initiated()
+
+            # Record HTTP Request Metrics For 202
+            duration_202: float = time.perf_counter() - start_time
+            record_user_action(action_type="deactivate_request", success=True)
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_202_ACCEPTED),
+                duration=duration_202,
             )
 
             # Return Accepted Response
@@ -215,6 +277,21 @@ class UserDeactivateRequestView(APIView):
 
             # Log The Exception
             logger.exception(log_message)
+
+            # Record API Error
+            record_api_error(endpoint=request.path, error_type=e.__class__.__name__)
+
+            # Record HTTP Request Metrics
+            duration_500: float = time.perf_counter() - start_time
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_500_INTERNAL_SERVER_ERROR),
+                duration=duration_500,
+            )
+
+            # Record User Action Failure
+            record_user_action(action_type="deactivate_request", success=False)
 
             # Return Error Response
             return Response(

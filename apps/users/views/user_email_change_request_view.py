@@ -1,6 +1,9 @@
+# ruff: noqa: PLR0915, S106
+
 # Standard Library Imports
 import datetime
 import logging
+import time
 from typing import Any
 from typing import ClassVar
 
@@ -24,11 +27,22 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from slugify import slugify
 
-# Local Imports
 from apps.common.authentication import JWTAuthentication
+
+# Local Imports
+from apps.common.opentelemetry.base import record_api_error
+from apps.common.opentelemetry.base import record_cache_operation
+from apps.common.opentelemetry.base import record_email_sent
+from apps.common.opentelemetry.base import record_http_request
+from apps.common.opentelemetry.base import record_token_validation
+from apps.common.opentelemetry.base import record_user_action
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers import Generic500ResponseSerializer
 from apps.users.models import User
+from apps.users.opentelemetry.views.user_email_change_request_metrics import record_email_change_request_initiated
+from apps.users.opentelemetry.views.user_email_change_request_metrics import record_email_template_render_duration
+from apps.users.opentelemetry.views.user_email_change_request_metrics import record_token_generated
+from apps.users.opentelemetry.views.user_email_change_request_metrics import record_token_reused
 from apps.users.serializers import UserEmailChangeRequestAcceptedResponseSerializer
 from apps.users.serializers import UserEmailChangeRequestUnauthorizedErrorResponseSerializer
 
@@ -86,6 +100,9 @@ class UserEmailChangeRequestView(APIView):
             Exception: For Any Unexpected Errors During Email Change Request.
         """
 
+        # Start Request Timer
+        start_time: float = time.perf_counter()
+
         try:
             # Get Token Cache
             token_cache: BaseCache = caches["token_cache"]
@@ -101,6 +118,9 @@ class UserEmailChangeRequestView(APIView):
 
             # Get Cached Token
             cached_token: str | None = token_cache.get(cache_key)
+
+            # Record Cache Get Operation
+            record_cache_operation(operation="get", cache_type="token_cache", success=bool(cached_token))
 
             # Get Current Time
             now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
@@ -139,7 +159,13 @@ class UserEmailChangeRequestView(APIView):
                         issuer=slugify(settings.PROJECT_NAME),
                     )
 
+                    # Record Token Validation Success
+                    record_token_validation(token_type="email_change", success=True)
+
                 except jwt.InvalidTokenError:
+                    # Record Token Validation Failure
+                    record_token_validation(token_type="email_change", success=False)
+
                     # Return False If Token Is Invalid
                     return False
 
@@ -167,8 +193,18 @@ class UserEmailChangeRequestView(APIView):
                 # Cache New Token
                 token_cache.set(cache_key, new_token, timeout=settings.CHANGE_EMAIL_TOKEN_EXPIRY)
 
+                # Record Cache Set Operation
+                record_cache_operation(operation="set", cache_type="token_cache", success=True)
+
                 # Update Cached Token
                 cached_token = new_token
+
+                # Record Token Generated
+                record_token_generated()
+
+            else:
+                # Record Token Reused
+                record_token_reused()
 
             # Get Current Site
             current_site: Site = Site.objects.get_current()
@@ -182,6 +218,7 @@ class UserEmailChangeRequestView(APIView):
             )
 
             # Load Email Change Email Template
+            template_start: float = time.perf_counter()
             email_change_email_template: str = render_to_string(
                 template_name="users/user_email_change_request_email.html",
                 context={
@@ -194,14 +231,40 @@ class UserEmailChangeRequestView(APIView):
                     "project_name": settings.PROJECT_NAME,
                 },
             )
+            template_duration: float = time.perf_counter() - template_start
+            record_email_template_render_duration(duration=template_duration)
 
-            # Send Email Change Email
-            send_mail(
-                subject=f"Change Your {settings.PROJECT_NAME} Email",
-                message="",
-                html_message=email_change_email_template,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
+            try:
+                # Send Email Change Email
+                send_mail(
+                    subject=f"Change Your {settings.PROJECT_NAME} Email",
+                    message="",
+                    html_message=email_change_email_template,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                )
+
+                # Record Email Sent Success
+                record_email_sent(email_type="email_change_request", success=True)
+
+            except Exception:
+                # Record Email Sent Failure
+                record_email_sent(email_type="email_change_request", success=False)
+
+                # Raise Exception
+                raise
+
+            # Record Email Change Request Initiated
+            record_email_change_request_initiated()
+
+            # Record HTTP Request Metrics For 202
+            duration_202: float = time.perf_counter() - start_time
+            record_user_action(action_type="email_change_request", success=True)
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_202_ACCEPTED),
+                duration=duration_202,
             )
 
             # Return Accepted Response
@@ -216,6 +279,21 @@ class UserEmailChangeRequestView(APIView):
 
             # Log The Exception
             logger.exception(log_message)
+
+            # Record API Error
+            record_api_error(endpoint=request.path, error_type=e.__class__.__name__)
+
+            # Record HTTP Request Metrics
+            duration_500: float = time.perf_counter() - start_time
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_500_INTERNAL_SERVER_ERROR),
+                duration=duration_500,
+            )
+
+            # Record User Action Failure
+            record_user_action(action_type="email_change_request", success=False)
 
             # Return Error Response
             return Response(

@@ -1,6 +1,7 @@
 # Standard Library Imports
 import datetime
 import logging
+import time
 from typing import Any
 from typing import ClassVar
 
@@ -25,9 +26,17 @@ from rest_framework.views import APIView
 from slugify import slugify
 
 # Local Imports
+from apps.common.opentelemetry.base import record_api_error
+from apps.common.opentelemetry.base import record_cache_operation
+from apps.common.opentelemetry.base import record_email_sent
+from apps.common.opentelemetry.base import record_http_request
+from apps.common.opentelemetry.base import record_user_action
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers import Generic500ResponseSerializer
 from apps.users.models import User
+from apps.users.opentelemetry.views.user_register_metrics import record_activation_token_generated
+from apps.users.opentelemetry.views.user_register_metrics import record_email_template_render_duration
+from apps.users.opentelemetry.views.user_register_metrics import record_register_initiated
 from apps.users.serializers import UserCreateBadRequestErrorResponseSerializer
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserRegisterPayloadSerializer
@@ -87,6 +96,9 @@ class UserRegisterView(APIView):
             Exception: For Any Unexpected Errors During User Registration.
         """
 
+        # Start Request Timer
+        start_time: float = time.perf_counter()
+
         try:
             # Get Token Cache
             token_cache: BaseCache = caches["token_cache"]
@@ -125,6 +137,12 @@ class UserRegisterView(APIView):
                     timeout=settings.ACTIVATION_TOKEN_EXPIRY,
                 )
 
+                # Record Cache Set Operation
+                record_cache_operation(operation="set", cache_type="token_cache", success=True)
+
+                # Record Activation Token Generated
+                record_activation_token_generated()
+
                 # Get Current Site
                 current_site: Site = Site.objects.get_current()
 
@@ -135,6 +153,7 @@ class UserRegisterView(APIView):
                 activation_link: str = f"{protocol}://{current_site.domain}/api/users/activate/{activation_token}/"
 
                 # Load Activation Email Template
+                template_start: float = time.perf_counter()
                 activation_email_template: str = render_to_string(
                     template_name="users/user_registered_email.html",
                     context={
@@ -148,14 +167,40 @@ class UserRegisterView(APIView):
                         "project_name": settings.PROJECT_NAME,
                     },
                 )
+                template_duration: float = time.perf_counter() - template_start
+                record_email_template_render_duration(duration=template_duration)
 
-                # Send Activation Email
-                send_mail(
-                    subject=f"Activate Your {settings.PROJECT_NAME} Account",
-                    message="",
-                    html_message=activation_email_template,
-                    from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[user_data.get("email")],
+                try:
+                    # Send Activation Email
+                    send_mail(
+                        subject=f"Activate Your {settings.PROJECT_NAME} Account",
+                        message="",
+                        html_message=activation_email_template,
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[user_data.get("email")],
+                    )
+
+                    # Record Email Sent Success
+                    record_email_sent(email_type="register_activation", success=True)
+
+                except Exception:
+                    # Record Email Sent Failure
+                    record_email_sent(email_type="register_activation", success=False)
+
+                    # Raise Exception
+                    raise
+
+                # Record Register Initiated
+                record_register_initiated()
+
+                # Record HTTP Request Metrics For 201
+                duration_201: float = time.perf_counter() - start_time
+                record_user_action(action_type="register", success=True)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_201_CREATED),
+                    duration=duration_201,
                 )
 
                 # Return Success Response
@@ -176,6 +221,21 @@ class UserRegisterView(APIView):
 
             # Log The Exception
             logger.exception(log_message)
+
+            # Record API Error
+            record_api_error(endpoint=request.path, error_type=e.__class__.__name__)
+
+            # Record HTTP Request Metrics
+            duration_500: float = time.perf_counter() - start_time
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_500_INTERNAL_SERVER_ERROR),
+                duration=duration_500,
+            )
+
+            # Record User Action Failure
+            record_user_action(action_type="register", success=False)
 
             # Return Error Response
             return Response(

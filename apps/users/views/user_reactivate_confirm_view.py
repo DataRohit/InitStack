@@ -1,6 +1,9 @@
+# ruff: noqa: PLR0915, S106
+
 # Standard Library Imports
 import datetime
 import logging
+import time
 from typing import Any
 from typing import ClassVar
 
@@ -26,9 +29,20 @@ from rest_framework.views import APIView
 from slugify import slugify
 
 # Local Imports
+from apps.common.opentelemetry.base import record_api_error
+from apps.common.opentelemetry.base import record_cache_operation
+from apps.common.opentelemetry.base import record_email_sent
+from apps.common.opentelemetry.base import record_http_request
+from apps.common.opentelemetry.base import record_token_validation
+from apps.common.opentelemetry.base import record_user_action
+from apps.common.opentelemetry.base import record_user_update
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers import Generic500ResponseSerializer
 from apps.users.models import User
+from apps.users.opentelemetry.views.user_reactivate_confirm_metrics import record_email_template_render_duration
+from apps.users.opentelemetry.views.user_reactivate_confirm_metrics import record_reactivation_performed
+from apps.users.opentelemetry.views.user_reactivate_confirm_metrics import record_token_cache_mismatch
+from apps.users.opentelemetry.views.user_reactivate_confirm_metrics import record_tokens_revoked
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserReactivateConfirmResponseSerializer
 from apps.users.serializers import UserReactivateConfirmUnauthorizedErrorResponseSerializer
@@ -88,6 +102,9 @@ class UserReactivateConfirmView(APIView):
             Exception: For Any Unexpected Errors During Reactivation.
         """
 
+        # Start Request Timer
+        start_time: float = time.perf_counter()
+
         try:
             # Get Token Cache
             token_cache: BaseCache = caches["token_cache"]
@@ -109,11 +126,29 @@ class UserReactivateConfirmView(APIView):
                 )
 
             except jwt.InvalidTokenError:
+                # Record Token Validation Failure
+                record_token_validation(token_type="reactivation", success=False)
+
+                # Record User Action Failure
+                record_user_action(action_type="reactivate_confirm", success=False)
+
+                # Record HTTP Request Metrics
+                duration_401: float = time.perf_counter() - start_time
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401,
+                )
+
                 # Return Unauthorized Response
                 return Response(
                     data={"error": "Invalid Reactivation Token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
+
+            # Record Token Validation Success
+            record_token_validation(token_type="reactivation", success=True)
 
             # Get User ID
             user_id: str = payload.get("sub")
@@ -121,8 +156,26 @@ class UserReactivateConfirmView(APIView):
             # Get Cached Token
             cached_token: str | None = token_cache.get(f"reactivation_token_{user_id}")
 
+            # Record Cache Get Operation
+            record_cache_operation(operation="get", cache_type="token_cache", success=bool(cached_token))
+
             # If Token Does Not Match
             if not cached_token or cached_token != token:
+                # Record Token Cache Mismatch
+                record_token_cache_mismatch()
+
+                # Record User Action Failure
+                record_user_action(action_type="reactivate_confirm", success=False)
+
+                # Record HTTP Request Metrics
+                duration_401_mismatch: float = time.perf_counter() - start_time
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401_mismatch,
+                )
+
                 # Return Unauthorized Response
                 return Response(
                     data={"error": "Invalid Or Expired Reactivation Token"},
@@ -136,12 +189,28 @@ class UserReactivateConfirmView(APIView):
             user.is_active = True
             user.save(update_fields=["is_active"])
 
+            # Record User Update Success
+            record_user_update(update_type="reactivate", success=True)
+
+            # Record Reactivation Performed
+            record_reactivation_performed()
+
             # Revoke Reactivation Token
             token_cache.delete(f"reactivation_token_{user_id}")
+
+            # Record Cache Delete Operation
+            record_cache_operation(operation="delete", cache_type="token_cache", success=True)
+            record_tokens_revoked(token_type="reactivation")
 
             # Revoke Access & Refresh Tokens
             token_cache.delete(f"access_token_{user_id}")
             token_cache.delete(f"refresh_token_{user_id}")
+
+            # Record Cache Delete Operations
+            record_cache_operation(operation="delete", cache_type="token_cache", success=True)
+            record_cache_operation(operation="delete", cache_type="token_cache", success=True)
+            record_tokens_revoked(token_type="access")
+            record_tokens_revoked(token_type="refresh")
 
             # Get Current Time
             now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
@@ -156,6 +225,7 @@ class UserReactivateConfirmView(APIView):
             login_link: str = f"{protocol}://{current_site.domain}/api/users/login/"
 
             # Load Reactivation Email Template
+            template_start: float = time.perf_counter()
             reactivation_email_template: str = render_to_string(
                 template_name="users/user_reactivate_success_email.html",
                 context={
@@ -168,18 +238,41 @@ class UserReactivateConfirmView(APIView):
                     "project_name": settings.PROJECT_NAME,
                 },
             )
+            template_duration: float = time.perf_counter() - template_start
+            record_email_template_render_duration(duration=template_duration)
 
-            # Send Reactivation Email
-            send_mail(
-                subject=f"Your {settings.PROJECT_NAME} Account Has Been Reactivated",
-                message="",
-                html_message=reactivation_email_template,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=[user.email],
-            )
+            try:
+                # Send Reactivation Email
+                send_mail(
+                    subject=f"Your {settings.PROJECT_NAME} Account Has Been Reactivated",
+                    message="",
+                    html_message=reactivation_email_template,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[user.email],
+                )
+
+                # Record Email Sent Success
+                record_email_sent(email_type="reactivation", success=True)
+
+            except Exception:
+                # Record Email Sent Failure
+                record_email_sent(email_type="reactivation", success=False)
+
+                # Raise Exception
+                raise
 
             # Serialize User Data
             user_data: dict[str, Any] = UserDetailSerializer(user).data
+
+            # Record HTTP Request Metrics For 200
+            duration_200: float = time.perf_counter() - start_time
+            record_user_action(action_type="reactivate_confirm", success=True)
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_200_OK),
+                duration=duration_200,
+            )
 
             # Return Success Response
             return Response(
@@ -193,6 +286,18 @@ class UserReactivateConfirmView(APIView):
 
             # Log The Exception
             logger.exception(log_message)
+
+            # Record API Error
+            record_api_error(endpoint=request.path, error_type=e.__class__.__name__)
+
+            # Record HTTP Request Metrics
+            duration_500: float = time.perf_counter() - start_time
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_500_INTERNAL_SERVER_ERROR),
+                duration=duration_500,
+            )
 
             # Return Error Response
             return Response(

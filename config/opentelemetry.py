@@ -62,6 +62,9 @@ def configure_opentelemetry() -> None:
 def configure_tracing(resource: Resource) -> None:
     """
     Configure OpenTelemetry Tracing.
+
+    Args:
+        resource (Resource): Resource Object Containing Service Information.
     """
 
     # Create Tracer Provider With The Resource
@@ -87,6 +90,9 @@ def configure_tracing(resource: Resource) -> None:
 def configure_metrics(resource: Resource) -> None:
     """
     Configure OpenTelemetry Metrics.
+
+    Args:
+        resource (Resource): Resource Object Containing Service Information.
     """
 
     # Create OTLP Metrics Exporter
@@ -95,7 +101,7 @@ def configure_metrics(resource: Resource) -> None:
     )
 
     # Create Periodic Exporting Metric Reader
-    metric_reader = PeriodicExportingMetricReader(
+    metric_reader: PeriodicExportingMetricReader = PeriodicExportingMetricReader(
         exporter=otlp_metric_exporter,
         export_interval_millis=5000,  # Export every 5 seconds
         export_timeout_millis=30000,  # 30 second timeout
@@ -134,10 +140,10 @@ def instrument_libraries() -> None:
 # Get Meter
 def get_meter() -> metrics.Meter:
     """
-    Get a meter instance for creating custom metrics.
+    Get A Meter Instance For Creating Custom Metrics.
 
     Returns:
-        Meter: OpenTelemetry meter instance
+        Meter: OpenTelemetry Meter Instance.
     """
 
     # Get Meter
@@ -151,10 +157,10 @@ def get_meter() -> metrics.Meter:
 # Get Tracer
 def get_tracer() -> trace.Tracer:
     """
-    Get a tracer instance for creating custom spans.
+    Get A Tracer Instance For Creating Custom Spans.
 
     Returns:
-        Tracer: OpenTelemetry tracer instance
+        Tracer: OpenTelemetry Tracer Instance.
     """
 
     # Get Tracer
@@ -169,7 +175,7 @@ def get_tracer() -> trace.Tracer:
 _OTEL_CONFIGURED: bool = False
 
 # Exports
-__all__ = [
+__all__: list[str] = [
     "configure_opentelemetry",
     "get_meter",
     "get_tracer",

@@ -2,6 +2,7 @@
 import datetime
 import logging
 import socket
+import time
 from typing import Any
 from typing import ClassVar
 
@@ -21,6 +22,9 @@ from rest_framework.views import APIView
 # Local Imports
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers import Generic500ResponseSerializer
+from apps.system.opentelemetry.views.health_view_metrics import health_check_duration_ms
+from apps.system.opentelemetry.views.health_view_metrics import health_check_errors_total
+from apps.system.opentelemetry.views.health_view_metrics import health_check_requests_total
 from apps.system.serializers import HealthResponseSerializer
 from apps.system.serializers import SystemDiskSerializer
 from apps.system.serializers import SystemInfoSerializer
@@ -80,6 +84,18 @@ class HealthCheckView(APIView):
         Raises:
             Exception: For Any Unexpected Errors During Health Check.
         """
+
+        # Start Duration Timer
+        start_time: float = time.perf_counter()
+
+        # Increment Requests Counter
+        health_check_requests_total.add(
+            1,
+            attributes={
+                "method": "GET",
+                "endpoint": "health",
+            },
+        )
 
         try:
             # Get System Memory Usage
@@ -166,6 +182,19 @@ class HealthCheckView(APIView):
 
             # If Status Not Healthy
             if health_data["status"] != "healthy":
+                # Calculate Duration Milliseconds
+                duration_ms: float = (time.perf_counter() - start_time) * 1000.0
+
+                # Record Duration Histogram
+                health_check_duration_ms.record(
+                    duration_ms,
+                    attributes={
+                        "method": "GET",
+                        "endpoint": "health",
+                        "status": "unhealthy",
+                    },
+                )
+
                 # Return Unhealthy Response
                 return Response(
                     data=health_data,
@@ -173,6 +202,19 @@ class HealthCheckView(APIView):
                 )
 
             # Return Healthy Response
+            # Calculate Duration Milliseconds
+            duration_ms: float = (time.perf_counter() - start_time) * 1000.0
+
+            # Record Duration Histogram
+            health_check_duration_ms.record(
+                duration_ms,
+                attributes={
+                    "method": "GET",
+                    "endpoint": "health",
+                    "status": "healthy",
+                },
+            )
+
             return Response(
                 data=health_data,
                 status=status.HTTP_200_OK,
@@ -186,6 +228,29 @@ class HealthCheckView(APIView):
             logger.exception(
                 error_message,
                 extra={"error_type": "psutil", "error": str(e)},
+            )
+
+            # Increment Errors Counter
+            health_check_errors_total.add(
+                1,
+                attributes={
+                    "method": "GET",
+                    "endpoint": "health",
+                    "type": "psutil",
+                },
+            )
+
+            # Calculate Duration Milliseconds
+            duration_ms: float = (time.perf_counter() - start_time) * 1000.0
+
+            # Record Duration Histogram
+            health_check_duration_ms.record(
+                duration_ms,
+                attributes={
+                    "method": "GET",
+                    "endpoint": "health",
+                    "status": "error",
+                },
             )
 
             # Return Error Response
@@ -202,6 +267,29 @@ class HealthCheckView(APIView):
             logger.exception(
                 error_message,
                 extra={"error_type": "unexpected", "error": str(e)},
+            )
+
+            # Increment Errors Counter
+            health_check_errors_total.add(
+                1,
+                attributes={
+                    "method": "GET",
+                    "endpoint": "health",
+                    "type": "unexpected",
+                },
+            )
+
+            # Calculate Duration Milliseconds
+            duration_ms: float = (time.perf_counter() - start_time) * 1000.0
+
+            # Record Duration Histogram
+            health_check_duration_ms.record(
+                duration_ms,
+                attributes={
+                    "method": "GET",
+                    "endpoint": "health",
+                    "status": "error",
+                },
             )
 
             # Return Error Response

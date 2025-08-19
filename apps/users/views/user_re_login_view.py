@@ -1,6 +1,9 @@
+# ruff: noqa: PLR0915, S106
+
 # Standard Library Imports
 import datetime
 import logging
+import time
 from typing import Any
 from typing import ClassVar
 
@@ -22,9 +25,17 @@ from rest_framework.views import APIView
 from slugify import slugify
 
 # Local Imports
+from apps.common.opentelemetry.base import record_api_error
+from apps.common.opentelemetry.base import record_cache_operation
+from apps.common.opentelemetry.base import record_http_request
+from apps.common.opentelemetry.base import record_token_validation
+from apps.common.opentelemetry.base import record_user_action
+from apps.common.opentelemetry.base import record_user_update
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers import Generic500ResponseSerializer
 from apps.users.models import User
+from apps.users.opentelemetry.views.user_re_login_metrics import record_access_token_generated
+from apps.users.opentelemetry.views.user_re_login_metrics import record_re_login_initiated
 from apps.users.serializers import UserDetailSerializer
 from apps.users.serializers import UserLoginResponseSerializer
 from apps.users.serializers import UserReLoginBadRequestErrorResponseSerializer
@@ -86,6 +97,9 @@ class UserReLoginView(APIView):
             Exception: For Any Unexpected Errors During User Re-Login.
         """
 
+        # Start Request Timer
+        start_time: float = time.perf_counter()
+
         try:
             # Get Token Cache
             token_cache: BaseCache = caches["token_cache"]
@@ -95,6 +109,16 @@ class UserReLoginView(APIView):
 
             # If Data Is Invalid
             if not serializer.is_valid():
+                # Record User Action And HTTP Metrics For 400
+                duration_400: float = time.perf_counter() - start_time
+                record_user_action(action_type="re_login", success=False)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_400_BAD_REQUEST),
+                    duration=duration_400,
+                )
+
                 # Return Validation Error Response
                 return Response(
                     data={"errors": serializer.errors},
@@ -106,6 +130,16 @@ class UserReLoginView(APIView):
 
             # If Token Is Invalid
             if not refresh_token:
+                # Record User Action And HTTP Metrics For 401
+                duration_401_missing: float = time.perf_counter() - start_time
+                record_user_action(action_type="re_login", success=False)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401_missing,
+                )
+
                 # Return Unauthorized Response
                 return Response(
                     data={"error": "Invalid Token"},
@@ -129,6 +163,19 @@ class UserReLoginView(APIView):
                 )
 
             except jwt.ExpiredSignatureError:
+                # Record Token Validation Failure
+                record_token_validation(token_type="refresh", success=False)
+
+                # Record User Action And HTTP Metrics For 401
+                duration_401_exp: float = time.perf_counter() - start_time
+                record_user_action(action_type="re_login", success=False)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401_exp,
+                )
+
                 # Return Unauthorized Response (Expired)
                 return Response(
                     data={"error": "Token Has Expired"},
@@ -136,11 +183,27 @@ class UserReLoginView(APIView):
                 )
 
             except jwt.InvalidTokenError:
+                # Record Token Validation Failure
+                record_token_validation(token_type="refresh", success=False)
+
+                # Record User Action And HTTP Metrics For 401
+                duration_401_invalid: float = time.perf_counter() - start_time
+                record_user_action(action_type="re_login", success=False)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401_invalid,
+                )
+
                 # Return Unauthorized Response (Invalid Token)
                 return Response(
                     data={"error": "Invalid Token"},
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
+
+            # Record Token Validation Success
+            record_token_validation(token_type="refresh", success=True)
 
             # Build User ID String
             user_id_str: str = str(payload["sub"])
@@ -152,8 +215,21 @@ class UserReLoginView(APIView):
             # Get Cached Refresh Token
             cached_refresh_token: str | None = token_cache.get(refresh_key)
 
+            # Record Cache Get Operation
+            record_cache_operation(operation="get", cache_type="token_cache", success=bool(cached_refresh_token))
+
             # If Token Does Not Match Cached
             if not cached_refresh_token or cached_refresh_token != refresh_token:
+                # Record User Action And HTTP Metrics For 401
+                duration_401_revoked: float = time.perf_counter() - start_time
+                record_user_action(action_type="re_login", success=False)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401_revoked,
+                )
+
                 # Return Unauthorized Response (Revoked)
                 return Response(
                     data={"error": "Token Has Been Revoked"},
@@ -182,11 +258,27 @@ class UserReLoginView(APIView):
             # Cache New Access Token
             token_cache.set(access_key, new_access_token, timeout=settings.ACCESS_TOKEN_EXPIRY)
 
+            # Record Cache Set Operation
+            record_cache_operation(operation="set", cache_type="token_cache", success=True)
+
+            # Record View-Specific Access Token Generated
+            record_access_token_generated()
+
             try:
                 # Get User Instance
                 user: User = User.objects.get(id=user_id_str)
 
             except User.DoesNotExist:
+                # Record User Action And HTTP Metrics For 401
+                duration_401_user: float = time.perf_counter() - start_time
+                record_user_action(action_type="re_login", success=False)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401_user,
+                )
+
                 # Return Unauthorized Response (User Not Found)
                 return Response(
                     data={"error": "User Not Found"},
@@ -195,6 +287,16 @@ class UserReLoginView(APIView):
 
             # If User Is Not Active
             if not getattr(user, "is_active", False):
+                # Record User Action And HTTP Metrics For 401
+                duration_401_disabled: float = time.perf_counter() - start_time
+                record_user_action(action_type="re_login", success=False)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401_disabled,
+                )
+
                 # Return Unauthorized Response (Disabled)
                 return Response(
                     data={"error": "User Account Is Disabled"},
@@ -205,12 +307,28 @@ class UserReLoginView(APIView):
             user.last_login = now_dt
             user.save(update_fields=["last_login"])
 
+            # Record User Update Success
+            record_user_update(update_type="last_login", success=True)
+
             # Serialize User Data
             user_data: dict[str, Any] = UserDetailSerializer(user).data
 
             # Attach Tokens
             user_data["access_token"] = new_access_token
             user_data["refresh_token"] = refresh_token
+
+            # Record Success Metrics
+            duration_200: float = time.perf_counter() - start_time
+            record_user_action(action_type="re_login", success=True)
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_200_OK),
+                duration=duration_200,
+            )
+
+            # Record Re-Login Initiated
+            record_re_login_initiated()
 
             # Return Success Response
             return Response(
@@ -224,6 +342,20 @@ class UserReLoginView(APIView):
 
             # Log The Exception
             logger.exception(log_message)
+
+            # Record API Error And HTTP Metrics
+            record_api_error(endpoint=request.path, error_type=e.__class__.__name__)
+
+            duration_500: float = time.perf_counter() - start_time
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_500_INTERNAL_SERVER_ERROR),
+                duration=duration_500,
+            )
+
+            # Record User Action Failure
+            record_user_action(action_type="re_login", success=False)
 
             # Return Error Response
             return Response(
