@@ -12,6 +12,7 @@ from apps.users.views import UserDeleteRequestView
 from apps.users.views import UserEmailChangeConfirmView
 from apps.users.views import UserEmailChangeRequestView
 from apps.users.views import UserLoginView
+from apps.users.views import UserLogoutView
 from apps.users.views import UserMeView
 from apps.users.views import UserReactivateConfirmView
 from apps.users.views import UserReactivateRequestView
@@ -111,5 +112,10 @@ urlpatterns: list[URLResolver | URLPattern] = [
         route="me/",
         view=UserMeView.as_view(),
         name="me",
+    ),
+    path(
+        route="logout/",
+        view=UserLogoutView.as_view(),
+        name="logout",
     ),
 ]
