@@ -240,7 +240,7 @@ services:
             start_period: 30s
         depends_on:
             jaeger-collector-service:
-                condition: service_started
+                condition: service_healthy
 
     jaeger-query-service:
         image: jaegertracing/jaeger-query:latest
@@ -267,7 +267,7 @@ services:
             start_period: 30s
         depends_on:
             jaeger-collector-service:
-                condition: service_started
+                condition: service_healthy
 
     jaeger-collector-service:
         image: jaegertracing/jaeger-collector:latest
@@ -282,6 +282,12 @@ services:
         networks:
             - initstack
         restart: unless-stopped
+        healthcheck:
+            test: ["CMD", "wget", "--spider", "-q", "http://localhost:14269/"]
+            interval: 1m30s
+            timeout: 30s
+            retries: 5
+            start_period: 30s
         depends_on:
             prometheus-service:
                 condition: service_healthy
