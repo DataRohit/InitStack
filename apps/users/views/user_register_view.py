@@ -43,7 +43,7 @@ from apps.users.serializers import UserRegisterPayloadSerializer
 from apps.users.serializers import UserRegisterResponseSerializer
 
 # Logger
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 # Get User Model
 User: User = get_user_model()

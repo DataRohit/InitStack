@@ -44,7 +44,7 @@ from apps.users.opentelemetry.views.user_delete_confirm_metrics import record_to
 from apps.users.serializers import UserDeleteConfirmUnauthorizedErrorResponseSerializer
 
 # Logger
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 # Get User Model
 User: User = get_user_model()

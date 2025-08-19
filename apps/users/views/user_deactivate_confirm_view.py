@@ -50,7 +50,7 @@ from apps.users.serializers import UserDeactivateConfirmUnauthorizedErrorRespons
 from apps.users.serializers import UserDetailSerializer
 
 # Logger
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 # Get User Model
 User: User = get_user_model()

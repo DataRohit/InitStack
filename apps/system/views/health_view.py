@@ -35,7 +35,7 @@ DEGRADED_THRESHOLD: int = 80
 UNHEALTHY_THRESHOLD: int = 90
 
 # Initialize Logger
-logger = logging.getLogger(__name__)
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 # Health Check View Class
