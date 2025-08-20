@@ -138,6 +138,7 @@ THIRD_PARTY_APPS: list[str] = [
     "health_check.contrib.db_heartbeat",
     "rest_framework",
     "silk",
+    "social_django",
 ]
 
 # Set The Local Apps
@@ -145,6 +146,7 @@ LOCAL_APPS: list[str] = [
     "apps.common",
     "apps.system",
     "apps.users",
+    "apps.oauth",
 ]
 
 # Set The Apps
@@ -188,7 +190,50 @@ BROKER_URL: str = RABBITMQ_URL
 MIGRATION_MODULES: dict[str, str] = {"sites": "apps.contrib.sites.migrations"}
 
 # Set The Authentication Backends
-AUTHENTICATION_BACKENDS: list[str] = ["django.contrib.auth.backends.ModelBackend"]
+AUTHENTICATION_BACKENDS: list[str] = [
+    "social_core.backends.google.GoogleOAuth2",
+    "social_core.backends.github.GithubOAuth2",
+    "django.contrib.auth.backends.ModelBackend",
+]
+
+# Set The Social Auth JSONField Enabled
+SOCIAL_AUTH_JSONFIELD_ENABLED = True
+
+# Set The Social Auth Google OAuth2 Key
+SOCIAL_AUTH_GOOGLE_OAUTH2_KEY: str = env.str(
+    var="SOCIAL_AUTH_GOOGLE_OAUTH2_KEY",
+    default="",
+)
+
+# Set The Social Auth Google OAuth2 Secret
+SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET: str = env.str(
+    var="SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET",
+    default="",
+)
+
+# Set The Social Auth Google OAuth2 Scope
+SOCIAL_AUTH_GOOGLE_OAUTH2_SCOPE: list[str] = [
+    "profile",
+    "email",
+]
+
+# Set The Social Auth Github OAuth2 Key
+SOCIAL_AUTH_GITHUB_KEY: str = env.str(
+    var="SOCIAL_AUTH_GITHUB_KEY",
+    default="",
+)
+
+# Set The Social Auth Github OAuth2 Secret
+SOCIAL_AUTH_GITHUB_SECRET: str = env.str(
+    var="SOCIAL_AUTH_GITHUB_SECRET",
+    default="",
+)
+
+# Set The Social Auth Github OAuth2 Scope
+SOCIAL_AUTH_GITHUB_SCOPE: list[str] = [
+    "user",
+    "email",
+]
 
 # Set The Password Hashers
 PASSWORD_HASHERS: list[str] = [

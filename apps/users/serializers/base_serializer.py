@@ -27,6 +27,7 @@ User: User = get_user_model()
                 "email": "john.doe@example.com",
                 "first_name": "John",
                 "last_name": "Doe",
+                "full_name": "John Doe",
                 "is_active": True,
                 "is_staff": False,
                 "is_superuser": False,
@@ -50,6 +51,7 @@ class UserDetailSerializer(serializers.ModelSerializer):
         email (serializers.EmailField): User Email Field.
         first_name (serializers.CharField): User First Name Field.
         last_name (serializers.CharField): User Last Name Field.
+        full_name (serializers.CharField): User Full Name Field.
         is_active (serializers.BooleanField): User Active Status Field.
         is_staff (serializers.BooleanField): User Staff Status Field.
         is_superuser (serializers.BooleanField): User Superuser Status Field.
@@ -114,6 +116,18 @@ class UserDetailSerializer(serializers.ModelSerializer):
         error_messages={
             "required": _("User Last Name Is Required"),
             "null": _("User Last Name Cannot Be Null"),
+        },
+    )
+
+    # Full Name Field
+    full_name: serializers.CharField = serializers.CharField(
+        help_text=_("User Full Name"),
+        label=_("Full Name"),
+        required=True,
+        allow_null=False,
+        error_messages={
+            "required": _("User Full Name Is Required"),
+            "null": _("User Full Name Cannot Be Null"),
         },
     )
 
