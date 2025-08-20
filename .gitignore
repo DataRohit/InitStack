@@ -127,5 +127,7 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-# Windsurf
-.windsurf
+# AI Editor Rules
+.cursor/
+.windsurf/
+.trae/
