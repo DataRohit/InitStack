@@ -1,6 +1,7 @@
 # ruff: noqa: PLR0915, S106
 
 # Standard Library Imports
+import contextlib
 import datetime
 import logging
 import time
@@ -24,6 +25,7 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from slugify import slugify
+from social_django.models import UserSocialAuth
 
 # Local Imports
 from apps.common.opentelemetry.base import record_api_error
@@ -86,7 +88,7 @@ class UserLoginView(APIView):
         summary="User Login",
         tags=["User"],
     )
-    def post(self, request: Request) -> Response:  # noqa: C901
+    def post(self, request: Request) -> Response:  # noqa: C901, PLR0911
         """
         Process User Login Request.
 
@@ -130,6 +132,29 @@ class UserLoginView(APIView):
 
             # Get Identifier
             identifier: str = serializer.validated_data.get("identifier").strip()
+
+            # Supress UserSocialAuth.DoesNotExist Exception
+            with contextlib.suppress(UserSocialAuth.DoesNotExist):
+                # Check If User Is Registered With Social Auth
+                UserSocialAuth.objects.get(
+                    Q(user__username__iexact=identifier) | Q(user__email__iexact=identifier),
+                )
+
+                # Record HTTP Request Metrics For 401
+                duration_401: float = time.perf_counter() - start_time
+                record_user_action(action_type="login", success=False)
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_401_UNAUTHORIZED),
+                    duration=duration_401,
+                )
+
+                # Return Unauthorized Response
+                return Response(
+                    data={"error": "User Registered With Social Auth"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
 
             # Get Password
             password: str = serializer.validated_data.get("password")

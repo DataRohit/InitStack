@@ -400,6 +400,17 @@ class UserLoginResponseSerializer(GenericResponseSerializer):
 @extend_schema_serializer(
     examples=[
         OpenApiExample(
+            name="User Registered With Social Auth",
+            value={
+                "status_code": status.HTTP_401_UNAUTHORIZED,
+                "error": "User Registered With Social Auth",
+            },
+            summary="User Registered With Social Auth",
+            description="User Registered With Social Auth Error Response",
+            response_only=True,
+            status_codes=[status.HTTP_401_UNAUTHORIZED],
+        ),
+        OpenApiExample(
             name="Invalid Username Or Password",
             value={
                 "status_code": status.HTTP_401_UNAUTHORIZED,
