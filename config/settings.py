@@ -33,6 +33,12 @@ DEBUG: bool = env.bool(
     default=False,
 )
 
+# Set The Templates Debug
+TEMPLATE_DEBUG: bool = env.bool(
+    var="DJANGO_TEMPLATES_DEBUG",
+    default=True,
+)
+
 # Set The Secret Key
 SECRET_KEY: str = env.str(
     var="DJANGO_SECRET_KEY",
@@ -298,6 +304,7 @@ TEMPLATES: list[dict[str, str]] = [
         "DIRS": [str(APPS_DIR / "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
+            "debug": TEMPLATE_DEBUG,
             "context_processors": [
                 "django.template.context_processors.debug",
                 "django.template.context_processors.request",
