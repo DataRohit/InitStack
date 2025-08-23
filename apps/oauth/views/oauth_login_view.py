@@ -25,10 +25,10 @@ from apps.common.opentelemetry.base import record_http_request
 from apps.common.opentelemetry.base import record_user_action
 from apps.common.renderers import GenericJSONRenderer
 from apps.common.serializers import Generic500ResponseSerializer
-from apps.oauth.opentelemetry.oauth_login_metrics import record_auth_url_generated
-from apps.oauth.opentelemetry.oauth_login_metrics import record_backend_loaded
-from apps.oauth.opentelemetry.oauth_login_metrics import record_oauth_login_initiated
-from apps.oauth.opentelemetry.oauth_login_metrics import record_redirect_uri_built
+from apps.oauth.opentelemetry.views.oauth_login_metrics import record_auth_url_generated
+from apps.oauth.opentelemetry.views.oauth_login_metrics import record_backend_loaded
+from apps.oauth.opentelemetry.views.oauth_login_metrics import record_oauth_login_initiated
+from apps.oauth.opentelemetry.views.oauth_login_metrics import record_redirect_uri_built
 from apps.oauth.serializers import OAuthLoginResponseSerializer
 
 # Logger
