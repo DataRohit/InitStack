@@ -2,8 +2,52 @@
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+# Third Party Imports
+import pytest
+from django.conf import settings
+
 # Local Imports
 from apps.common.health_checks.elasticsearch_health_check import ElasticsearchHealthCheck
+
+
+# Elasticsearch Fixtures
+@pytest.fixture
+def elasticsearch_health_check() -> ElasticsearchHealthCheck:
+    """
+    Create Elasticsearch Health Check Instance.
+
+    Returns:
+        ElasticsearchHealthCheck: Instance Of Elasticsearch Health Check.
+    """
+
+    # Return Instance
+    return ElasticsearchHealthCheck()
+
+
+@pytest.fixture
+def mock_elasticsearch_settings(monkeypatch) -> None:
+    """
+    Mock Elasticsearch Settings.
+
+    Args:
+        monkeypatch: Pytest Monkeypatch Fixture.
+    """
+
+    # Set Elasticsearch URL
+    monkeypatch.setattr(settings, "ELASTICSEARCH_URL", "elasticsearch://user:pass@localhost:9200")
+
+
+@pytest.fixture
+def mock_elasticsearch_settings_empty(monkeypatch) -> None:
+    """
+    Mock Empty Elasticsearch Settings.
+
+    Args:
+        monkeypatch: Pytest Monkeypatch Fixture.
+    """
+
+    # Set Empty Elasticsearch URL
+    monkeypatch.setattr(settings, "ELASTICSEARCH_URL", "")
 
 
 # Test Elasticsearch Health Check Identifier

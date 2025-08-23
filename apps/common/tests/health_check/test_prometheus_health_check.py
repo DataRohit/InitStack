@@ -3,11 +3,26 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 # Third Party Imports
+import pytest
 import requests
 from health_check.exceptions import HealthCheckException
 
 # Local Imports
 from apps.common.health_checks.prometheus_health_check import PrometheusHealthCheck
+
+
+# Prometheus Fixture
+@pytest.fixture
+def prometheus_health_check() -> PrometheusHealthCheck:
+    """
+    Create Prometheus Health Check Instance.
+
+    Returns:
+        PrometheusHealthCheck: Instance Of Prometheus Health Check.
+    """
+
+    # Return Instance
+    return PrometheusHealthCheck()
 
 
 # Test Prometheus Health Check Identifier

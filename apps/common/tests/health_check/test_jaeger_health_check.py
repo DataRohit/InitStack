@@ -3,10 +3,111 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 # Third Party Imports
+import pytest
 import requests
 
 # Local Imports
 from apps.common.health_checks.jaeger_health_check import JaegerHealthCheck
+
+
+# Jaeger Fixtures
+@pytest.fixture
+def jaeger_health_check() -> JaegerHealthCheck:
+    """
+    Create Jaeger Health Check Instance.
+
+    Returns:
+        JaegerHealthCheck: Instance Of Jaeger Health Check.
+    """
+
+    # Return Instance
+    return JaegerHealthCheck()
+
+
+@pytest.fixture
+def mock_jaeger_settings(monkeypatch) -> None:
+    """
+    Mock Jaeger Settings.
+
+    Args:
+        monkeypatch: Pytest Monkeypatch Fixture.
+    """
+
+    # Set Jaeger URL
+    monkeypatch.setattr("django.conf.settings.JAEGER_QUERY_URL", "http://localhost:16686")
+
+
+@pytest.fixture
+def mock_jaeger_settings_empty(monkeypatch) -> None:
+    """
+    Mock Empty Jaeger Settings.
+
+    Args:
+        monkeypatch: Pytest Monkeypatch Fixture.
+    """
+
+    # Set Empty Jaeger URL
+    monkeypatch.setattr("django.conf.settings.JAEGER_QUERY_URL", "")
+
+
+# Mock Response Fixtures
+@pytest.fixture
+def mock_response_success() -> MagicMock:
+    """
+    Mock Successful HTTP Response.
+
+    Returns:
+        MagicMock: Mock Response With 200 Status Code.
+    """
+
+    # Create Mock Response
+    mock_response = MagicMock()
+
+    # Configure Mock
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"data": ["service1", "service2"]}
+
+    # Return Mock
+    return mock_response
+
+
+@pytest.fixture
+def mock_response_error() -> MagicMock:
+    """
+    Mock Error HTTP Response.
+
+    Returns:
+        MagicMock: Mock Response With Error Status Code.
+    """
+
+    # Create Mock Response
+    mock_response = MagicMock()
+
+    # Configure Mock
+    mock_response.status_code = 500
+
+    # Return Mock
+    return mock_response
+
+
+@pytest.fixture
+def mock_response_invalid_json() -> MagicMock:
+    """
+    Mock HTTP Response With Invalid JSON.
+
+    Returns:
+        MagicMock: Mock Response With Invalid JSON Structure.
+    """
+
+    # Create Mock Response
+    mock_response = MagicMock()
+
+    # Configure Mock
+    mock_response.status_code = 200
+    mock_response.json.return_value = {"wrong_key": "value"}
+
+    # Return Mock
+    return mock_response
 
 
 # Test Jaeger Health Check Identifier

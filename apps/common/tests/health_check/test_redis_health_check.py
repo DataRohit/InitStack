@@ -3,11 +3,26 @@ from unittest.mock import MagicMock
 from unittest.mock import patch
 
 # Third Party Imports
+import pytest
 import redis
 from health_check.exceptions import HealthCheckException
 
 # Local Imports
 from apps.common.health_checks.redis_health_check import RedisHealthCheck
+
+
+# Redis Fixture
+@pytest.fixture
+def redis_health_check() -> RedisHealthCheck:
+    """
+    Create Redis Health Check Instance.
+
+    Returns:
+        RedisHealthCheck: Instance Of Redis Health Check.
+    """
+
+    # Return Instance
+    return RedisHealthCheck()
 
 
 # Test Redis Health Check Identifier

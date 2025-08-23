@@ -3,8 +3,54 @@ import smtplib
 from unittest.mock import MagicMock
 from unittest.mock import patch
 
+# Third Party Imports
+import pytest
+from django.conf import settings
+
 # Local Imports
 from apps.common.health_checks.mailpit_health_check import MailpitSMTPHealthCheck
+
+
+# Mailpit Fixtures
+@pytest.fixture
+def mailpit_health_check() -> MailpitSMTPHealthCheck:
+    """
+    Create Mailpit Health Check Instance.
+
+    Returns:
+        MailpitSMTPHealthCheck: Instance Of Mailpit Health Check.
+    """
+
+    # Return Instance
+    return MailpitSMTPHealthCheck()
+
+
+@pytest.fixture
+def mock_mailpit_settings(monkeypatch) -> None:
+    """
+    Mock Mailpit Settings.
+
+    Args:
+        monkeypatch: Pytest Monkeypatch Fixture.
+    """
+
+    # Set Mailpit Settings
+    monkeypatch.setattr(settings, "EMAIL_HOST", "localhost")
+    monkeypatch.setattr(settings, "EMAIL_PORT", 1025)
+
+
+@pytest.fixture
+def mock_mailpit_settings_empty(monkeypatch) -> None:
+    """
+    Mock Empty Mailpit Settings.
+
+    Args:
+        monkeypatch: Pytest Monkeypatch Fixture.
+    """
+
+    # Set Empty Mailpit Settings
+    monkeypatch.setattr(settings, "EMAIL_HOST", "")
+    monkeypatch.setattr(settings, "EMAIL_PORT", None)
 
 
 # Test Mailpit SMTP Health Check Identifier

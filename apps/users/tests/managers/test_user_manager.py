@@ -20,6 +20,62 @@ User: User = get_user_model()
 pytestmark = pytest.mark.django_db
 
 
+# User Manager Fixture
+@pytest.fixture
+def user_manager() -> UserManager:
+    """
+    Create User Manager Instance For Testing.
+
+    Returns:
+        UserManager: User Manager Instance.
+    """
+
+    # Return User Manager
+    return UserManager()
+
+
+# User Data Fixture
+@pytest.fixture
+def user_data() -> dict[str, Any]:
+    """
+    Create User Data For Testing.
+
+    Returns:
+        dict[str, Any]: Dictionary With User Data.
+    """
+
+    # Return User Data
+    return {
+        "first_name": "John",
+        "last_name": "Doe",
+        "username": "johndoe",
+        "email": "john.doe@example.com",
+        "password": "StrongP@ssw0rd",
+    }
+
+
+# Superuser Data Fixture
+@pytest.fixture
+def superuser_data() -> dict[str, Any]:
+    """
+    Create Superuser Data For Testing.
+
+    Returns:
+        dict[str, Any]: Dictionary With Superuser Data.
+    """
+
+    # Return Superuser Data
+    return {
+        "first_name": "Admin",
+        "last_name": "User",
+        "username": "adminuser",
+        "email": "admin@example.com",
+        "password": "AdminP@ssw0rd",
+        "is_staff": True,
+        "is_superuser": True,
+    }
+
+
 # Test Manager Initialization
 def test_manager_initialization(user_manager: UserManager) -> None:
     """

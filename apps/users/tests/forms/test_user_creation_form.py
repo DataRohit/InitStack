@@ -10,6 +10,106 @@ from apps.users.models import User
 pytestmark = pytest.mark.django_db
 
 
+# User Form Data Fixture
+@pytest.fixture
+def user_form_data() -> dict[str, str]:
+    """
+    Create User Form Data For Testing.
+
+    Returns:
+        dict[str, str]: Dictionary With User Form Data.
+    """
+
+    # Return Form Data
+    return {
+        "first_name": "John",
+        "last_name": "Doe",
+        "username": "johndoe",
+        "email": "john.doe@example.com",
+    }
+
+
+# User Creation Form Data Fixture
+@pytest.fixture
+def user_creation_form_data(user_form_data: dict[str, str]) -> dict[str, str]:
+    """
+    Create User Creation Form Data For Testing.
+
+    Args:
+        user_form_data (dict[str, str]): Base User Form Data.
+
+    Returns:
+        dict[str, str]: Dictionary With User Creation Form Data.
+    """
+
+    # Add Password Fields
+    user_form_data.update(
+        {
+            "password1": "StrongP@ssw0rd",
+            "password2": "StrongP@ssw0rd",
+        },
+    )
+
+    # Return Form Data
+    return user_form_data
+
+
+# Mixed Case Form Data Fixture
+@pytest.fixture
+def mixed_case_form_data() -> dict[str, str]:
+    """
+    Create Form Data With Mixed Case For Testing.
+
+    Returns:
+        dict[str, str]: Dictionary With Mixed Case Form Data.
+    """
+
+    # Return Form Data
+    return {
+        "first_name": "jOhN",
+        "last_name": "dOe",
+        "username": "JohnDoe",
+        "email": "John.Doe@Example.COM",
+    }
+
+
+# User Creation Form Fixture
+@pytest.fixture
+def user_creation_form(user_creation_form_data: dict[str, str]) -> UserCreationForm:
+    """
+    Create User Creation Form Instance For Testing.
+
+    Args:
+        user_creation_form_data (dict[str, str]): User Creation Form Data.
+
+    Returns:
+        UserCreationForm: User Creation Form Instance.
+    """
+
+    # Create Form
+    return UserCreationForm(data=user_creation_form_data)
+
+
+# User Instance Fixture
+@pytest.fixture
+def user_instance() -> User:
+    """
+    Create User Instance For Testing.
+
+    Returns:
+        User: User Instance.
+    """
+
+    # Create & Return User
+    return User.objects.create_user(
+        first_name="Jane",
+        last_name="Smith",
+        username="janesmith",
+        email="jane.smith@example.com",
+        password="AnotherStr0ngP@ss",
+    )
+
+
 # Test Form Initialization
 def test_form_initialization(user_creation_form: UserCreationForm) -> None:
     """

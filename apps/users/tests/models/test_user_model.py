@@ -26,6 +26,66 @@ User: User = get_user_model()
 pytestmark = pytest.mark.django_db
 
 
+# User Factory Fixture
+@pytest.fixture
+def user_factory() -> dict[str, Any]:
+    """
+    User Factory Fixture.
+
+    Returns:
+        dict[str, Any]: User Factory Dictionary.
+    """
+
+    # Return User Factory
+    return {
+        "username": "testuser",
+        "email": "test@example.com",
+        "first_name": "Test",
+        "last_name": "User",
+        "password": "TestPass123!",
+    }
+
+
+# User Instance Fixture
+@pytest.fixture
+def user_instance(user_factory: dict[str, Any]) -> User:
+    """
+    User Instance Fixture.
+
+    Args:
+        user_factory (dict[str, Any]): User Factory Dictionary.
+
+    Returns:
+        User: User Instance.
+    """
+
+    # Create User
+    user: User = User.objects.create_user(**user_factory)
+
+    # Return User
+    return user
+
+
+# Superuser Factory Fixture
+@pytest.fixture
+def superuser_factory() -> dict[str, Any]:
+    """
+    Superuser Factory Fixture.
+
+    Returns:
+        dict[str, Any]: Superuser Factory Dictionary.
+    """
+
+    # Return Superuser Factory
+    return {
+        "username": "testsuperuser",
+        "email": "superuser@example.com",
+        "first_name": "Super",
+        "last_name": "User",
+        "password": "SuperPass123!",
+    }
+
+
 # Test User Model Fields
 def test_user_model_fields() -> None:
     """

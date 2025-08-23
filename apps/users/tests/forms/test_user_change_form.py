@@ -10,6 +10,98 @@ from apps.users.models import User
 pytestmark = pytest.mark.django_db
 
 
+# User Form Data Fixture
+@pytest.fixture
+def user_form_data() -> dict[str, str]:
+    """
+    Create User Form Data For Testing.
+
+    Returns:
+        dict[str, str]: Dictionary With User Form Data.
+    """
+
+    # Return Form Data
+    return {
+        "first_name": "John",
+        "last_name": "Doe",
+        "username": "johndoe",
+        "email": "john.doe@example.com",
+    }
+
+
+# Mixed Case Form Data Fixture
+@pytest.fixture
+def mixed_case_form_data() -> dict[str, str]:
+    """
+    Create Form Data With Mixed Case For Testing.
+
+    Returns:
+        dict[str, str]: Dictionary With Mixed Case Form Data.
+    """
+
+    # Return Form Data
+    return {
+        "first_name": "jOhN",
+        "last_name": "dOe",
+        "username": "JohnDoe",
+        "email": "John.Doe@Example.COM",
+    }
+
+
+# User Change Form Fixture
+@pytest.fixture
+def user_change_form(user_form_data: dict[str, str]) -> UserChangeForm:
+    """
+    Create User Change Form Instance For Testing.
+
+    Args:
+        user_form_data (dict[str, str]): User Form Data.
+
+    Returns:
+        UserChangeForm: User Change Form Instance.
+    """
+
+    # Create Form
+    return UserChangeForm(data=user_form_data)
+
+
+# User Instance Fixture
+@pytest.fixture
+def user_instance() -> User:
+    """
+    Create User Instance For Testing.
+
+    Returns:
+        User: User Instance.
+    """
+
+    # Create & Return User
+    return User.objects.create_user(
+        first_name="Jane",
+        last_name="Smith",
+        username="janesmith",
+        email="jane.smith@example.com",
+        password="AnotherStr0ngP@ss",
+    )
+
+
+# User Change Form With Instance Fixture
+@pytest.fixture
+def user_change_form_with_instance(user_instance: User) -> UserChangeForm:
+    """
+    Create User Change Form With User Instance For Testing.
+
+    Args:
+        user_instance (User): User Instance.
+
+    Returns:
+        UserChangeForm: User Change Form Instance With User Instance.
+    """
+
+    # Create Form
+    return UserChangeForm(instance=user_instance)
+
+
 # Test Form Initialization
 def test_form_initialization(user_change_form: UserChangeForm) -> None:
     """
