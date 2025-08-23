@@ -10,351 +10,297 @@ from health_check.exceptions import HealthCheckException
 from apps.common.health_checks.redis_health_check import RedisHealthCheck
 
 
-# Test Redis Health Check Class
-class TestRedisHealthCheck:
+# Test Redis Health Check Identifier
+def test_identifier(redis_health_check: RedisHealthCheck) -> None:
     """
-    Test Redis Health Check Class.
+    Test Identifier Method Returns Correct Class Name.
     """
 
-    # Test Identifier Method
-    def test_identifier(self, redis_health_check: RedisHealthCheck) -> None:
-        """
-        Test Identifier Method Returns Correct Class Name.
+    # Assert Identifier Returns Class Name
+    assert redis_health_check.identifier() == "RedisHealthCheck"
 
-        Args:
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-        """
 
-        # Assert Identifier Returns Class Name
-        assert redis_health_check.identifier() == "RedisHealthCheck"
+# Test Check Status With No Settings Configured
+def test_check_status_no_settings(
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method When No Settings Are Configured.
+    """
 
-    # Test Check Status With No Settings Configured
-    def test_check_status_no_settings(
-        self,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method When No Settings Are Configured.
+    # Set Empty Redis URL
+    monkeypatch.delattr("django.conf.settings.REDIS_DEFAULT_URL", raising=False)
 
-        Args:
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Set Empty Redis URL
-        monkeypatch.delattr("django.conf.settings.REDIS_DEFAULT_URL", raising=False)
+    # Assert Error Was Added
+    assert len(redis_health_check.errors) == 1
+    assert "REDIS_DEFAULT_URL Not Configured" in str(redis_health_check.errors[0])
 
-        # Run Check Status
-        redis_health_check.check_status()
 
-        # Assert Error Was Added
-        assert len(redis_health_check.errors) == 1
-        assert "REDIS_DEFAULT_URL Not Configured" in str(redis_health_check.errors[0])
+# Test Check Status With Empty Redis URL
+def test_check_status_empty_redis_url(
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method With Empty Redis URL.
+    """
 
-    # Test Check Status With Empty Redis URL
-    def test_check_status_empty_redis_url(
-        self,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method With Empty Redis URL.
+    # Set Empty Redis URL
+    monkeypatch.setattr("django.conf.settings.REDIS_DEFAULT_URL", "")
 
-        Args:
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Set Empty Redis URL
-        monkeypatch.setattr("django.conf.settings.REDIS_DEFAULT_URL", "")
+    # Assert Error Was Added
+    assert len(redis_health_check.errors) == 1
+    assert "REDIS_DEFAULT_URL Not Configured" in str(redis_health_check.errors[0])
 
-        # Run Check Status
-        redis_health_check.check_status()
 
-        # Assert Error Was Added
-        assert len(redis_health_check.errors) == 1
-        assert "REDIS_DEFAULT_URL Not Configured" in str(redis_health_check.errors[0])
+# Test Check Status With Valid Settings And Successful Ping
+@patch("redis.Redis")
+def test_check_status_success(
+    mock_redis: MagicMock,
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method With Valid Settings And Successful Ping.
+    """
 
-    # Test Check Status With Valid Settings And Successful Ping
-    @patch("redis.Redis")
-    def test_check_status_success(
-        self,
-        mock_redis: MagicMock,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method With Valid Settings And Successful Ping.
+    # Set Redis URL
+    monkeypatch.setattr(
+        "django.conf.settings.REDIS_DEFAULT_URL",
+        "redis://:password@localhost:6379/0",
+    )
 
-        Args:
-            mock_redis (MagicMock): Mock Redis Class.
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Configure Mock Redis Client
+    mock_redis_instance = MagicMock()
+    mock_redis_instance.ping.return_value = True
+    mock_redis.return_value = mock_redis_instance
 
-        # Set Redis URL
-        monkeypatch.setattr(
-            "django.conf.settings.REDIS_DEFAULT_URL",
-            "redis://:password@localhost:6379/0",
-        )
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Configure Mock Redis Client
-        mock_redis_instance = MagicMock()
-        mock_redis_instance.ping.return_value = True
-        mock_redis.return_value = mock_redis_instance
+    # Assert No Errors Were Added
+    assert len(redis_health_check.errors) == 0
 
-        # Run Check Status
-        redis_health_check.check_status()
+    # Assert Redis Client Was Created With Correct Parameters
+    mock_redis.assert_called_once_with(
+        host="localhost",
+        port=6379,
+        db=0,
+        password="password",
+        socket_timeout=3,
+    )
 
-        # Assert No Errors Were Added
-        assert len(redis_health_check.errors) == 0
+    # Assert Ping Was Called
+    mock_redis_instance.ping.assert_called_once()
 
-        # Assert Redis Client Was Created With Correct Parameters
-        mock_redis.assert_called_once_with(
-            host="localhost",
-            port=6379,
-            db=0,
-            password="password",
-            socket_timeout=3,
-        )
 
-        # Assert Ping Was Called
-        mock_redis_instance.ping.assert_called_once()
+# Test Check Status With Redis URL Without Port
+@patch("redis.Redis")
+def test_check_status_no_port(
+    mock_redis: MagicMock,
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method With Redis URL Without Port.
+    """
 
-    # Test Check Status With Redis URL Without Port
-    @patch("redis.Redis")
-    def test_check_status_no_port(
-        self,
-        mock_redis: MagicMock,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method With Redis URL Without Port.
+    # Set Redis URL Without Port
+    monkeypatch.setattr(
+        "django.conf.settings.REDIS_DEFAULT_URL",
+        "redis://localhost/0",
+    )
 
-        Args:
-            mock_redis (MagicMock): Mock Redis Class.
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Configure Mock Redis Client
+    mock_redis_instance = MagicMock()
+    mock_redis_instance.ping.return_value = True
+    mock_redis.return_value = mock_redis_instance
 
-        # Set Redis URL Without Port
-        monkeypatch.setattr(
-            "django.conf.settings.REDIS_DEFAULT_URL",
-            "redis://localhost/0",
-        )
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Configure Mock Redis Client
-        mock_redis_instance = MagicMock()
-        mock_redis_instance.ping.return_value = True
-        mock_redis.return_value = mock_redis_instance
+    # Assert No Errors Were Added
+    assert len(redis_health_check.errors) == 0
 
-        # Run Check Status
-        redis_health_check.check_status()
+    # Assert Redis Client Was Created With Default Port
+    mock_redis.assert_called_once_with(
+        host="localhost",
+        port=6379,
+        db=0,
+        password=None,
+        socket_timeout=3,
+    )
 
-        # Assert No Errors Were Added
-        assert len(redis_health_check.errors) == 0
 
-        # Assert Redis Client Was Created With Default Port
-        mock_redis.assert_called_once_with(
-            host="localhost",
-            port=6379,
-            db=0,
-            password=None,
-            socket_timeout=3,
-        )
+# Test Check Status With Redis URL Without DB
+@patch("redis.Redis")
+def test_check_status_no_db(
+    mock_redis: MagicMock,
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method With Redis URL Without DB.
+    """
 
-    # Test Check Status With Redis URL Without DB
-    @patch("redis.Redis")
-    def test_check_status_no_db(
-        self,
-        mock_redis: MagicMock,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method With Redis URL Without DB.
+    # Set Redis URL Without DB
+    monkeypatch.setattr(
+        "django.conf.settings.REDIS_DEFAULT_URL",
+        "redis://localhost:6379",
+    )
 
-        Args:
-            mock_redis (MagicMock): Mock Redis Class.
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Configure Mock Redis Client
+    mock_redis_instance = MagicMock()
+    mock_redis_instance.ping.return_value = True
+    mock_redis.return_value = mock_redis_instance
 
-        # Set Redis URL Without DB
-        monkeypatch.setattr(
-            "django.conf.settings.REDIS_DEFAULT_URL",
-            "redis://localhost:6379",
-        )
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Configure Mock Redis Client
-        mock_redis_instance = MagicMock()
-        mock_redis_instance.ping.return_value = True
-        mock_redis.return_value = mock_redis_instance
+    # Assert No Errors Were Added
+    assert len(redis_health_check.errors) == 0
 
-        # Run Check Status
-        redis_health_check.check_status()
+    # Assert Redis Client Was Created With Default DB
+    mock_redis.assert_called_once_with(
+        host="localhost",
+        port=6379,
+        db=0,
+        password=None,
+        socket_timeout=3,
+    )
 
-        # Assert No Errors Were Added
-        assert len(redis_health_check.errors) == 0
 
-        # Assert Redis Client Was Created With Default DB
-        mock_redis.assert_called_once_with(
-            host="localhost",
-            port=6379,
-            db=0,
-            password=None,
-            socket_timeout=3,
-        )
+# Test Check Status With Failed Ping
+@patch("redis.Redis")
+def test_check_status_failed_ping(
+    mock_redis: MagicMock,
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method With Failed Ping.
+    """
 
-    # Test Check Status With Failed Ping
-    @patch("redis.Redis")
-    def test_check_status_failed_ping(
-        self,
-        mock_redis: MagicMock,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method With Failed Ping.
+    # Set Redis URL
+    monkeypatch.setattr(
+        "django.conf.settings.REDIS_DEFAULT_URL",
+        "redis://localhost:6379/0",
+    )
 
-        Args:
-            mock_redis (MagicMock): Mock Redis Class.
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Configure Mock Redis Client
+    mock_redis_instance = MagicMock()
+    mock_redis_instance.ping.return_value = False
+    mock_redis.return_value = mock_redis_instance
 
-        # Set Redis URL
-        monkeypatch.setattr(
-            "django.conf.settings.REDIS_DEFAULT_URL",
-            "redis://localhost:6379/0",
-        )
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Configure Mock Redis Client
-        mock_redis_instance = MagicMock()
-        mock_redis_instance.ping.return_value = False
-        mock_redis.return_value = mock_redis_instance
+    # Assert Error Was Added
+    assert len(redis_health_check.errors) == 1
+    assert "Redis Did Not Respond To PING" in str(redis_health_check.errors[0])
 
-        # Run Check Status
-        redis_health_check.check_status()
 
-        # Assert Error Was Added
-        assert len(redis_health_check.errors) == 1
-        assert "Redis Did Not Respond To PING" in str(redis_health_check.errors[0])
+# Test Check Status With Redis Error
+@patch("redis.Redis")
+def test_check_status_redis_error(
+    mock_redis: MagicMock,
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method With Redis Error.
+    """
 
-    # Test Check Status With Redis Error
-    @patch("redis.Redis")
-    def test_check_status_redis_error(
-        self,
-        mock_redis: MagicMock,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method With Redis Error.
+    # Set Redis URL
+    monkeypatch.setattr(
+        "django.conf.settings.REDIS_DEFAULT_URL",
+        "redis://localhost:6379/0",
+    )
 
-        Args:
-            mock_redis (MagicMock): Mock Redis Class.
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Configure Mock To Raise Exception
+    mock_redis.side_effect = redis.RedisError("Connection Error")
 
-        # Set Redis URL
-        monkeypatch.setattr(
-            "django.conf.settings.REDIS_DEFAULT_URL",
-            "redis://localhost:6379/0",
-        )
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Configure Mock To Raise Exception
-        mock_redis.side_effect = redis.RedisError("Connection Error")
+    # Assert Error Was Added
+    assert len(redis_health_check.errors) == 1
+    assert "Connection Error" in str(redis_health_check.errors[0])
+    assert isinstance(redis_health_check.errors[0], HealthCheckException)
 
-        # Run Check Status
-        redis_health_check.check_status()
 
-        # Assert Error Was Added
-        assert len(redis_health_check.errors) == 1
-        assert "Connection Error" in str(redis_health_check.errors[0])
-        assert isinstance(redis_health_check.errors[0], HealthCheckException)
+# Test Check Status With Ping Exception
+@patch("redis.Redis")
+def test_check_status_ping_exception(
+    mock_redis: MagicMock,
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method With Ping Exception.
+    """
 
-    # Test Check Status With Ping Exception
-    @patch("redis.Redis")
-    def test_check_status_ping_exception(
-        self,
-        mock_redis: MagicMock,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method With Ping Exception.
+    # Set Redis URL
+    monkeypatch.setattr(
+        "django.conf.settings.REDIS_DEFAULT_URL",
+        "redis://localhost:6379/0",
+    )
 
-        Args:
-            mock_redis (MagicMock): Mock Redis Class.
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Configure Mock Redis Client
+    mock_redis_instance = MagicMock()
+    mock_redis_instance.ping.side_effect = redis.RedisError("Ping Failed")
+    mock_redis.return_value = mock_redis_instance
 
-        # Set Redis URL
-        monkeypatch.setattr(
-            "django.conf.settings.REDIS_DEFAULT_URL",
-            "redis://localhost:6379/0",
-        )
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Configure Mock Redis Client
-        mock_redis_instance = MagicMock()
-        mock_redis_instance.ping.side_effect = redis.RedisError("Ping Failed")
-        mock_redis.return_value = mock_redis_instance
+    # Assert Error Was Added
+    assert len(redis_health_check.errors) == 1
+    assert "Ping Failed" in str(redis_health_check.errors[0])
+    assert isinstance(redis_health_check.errors[0], HealthCheckException)
 
-        # Run Check Status
-        redis_health_check.check_status()
 
-        # Assert Error Was Added
-        assert len(redis_health_check.errors) == 1
-        assert "Ping Failed" in str(redis_health_check.errors[0])
-        assert isinstance(redis_health_check.errors[0], HealthCheckException)
+# Test Check Status With Generic Exception
+@patch("redis.Redis")
+def test_check_status_generic_exception(
+    mock_redis: MagicMock,
+    redis_health_check: RedisHealthCheck,
+    monkeypatch,
+) -> None:
+    """
+    Test Check Status Method With Generic Exception.
+    """
 
-    # Test Check Status With Generic Exception
-    @patch("redis.Redis")
-    def test_check_status_generic_exception(
-        self,
-        mock_redis: MagicMock,
-        redis_health_check: RedisHealthCheck,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Check Status Method With Generic Exception.
+    # Set Redis URL
+    monkeypatch.setattr(
+        "django.conf.settings.REDIS_DEFAULT_URL",
+        "redis://localhost:6379/0",
+    )
 
-        Args:
-            mock_redis (MagicMock): Mock Redis Class.
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-            monkeypatch: Pytest Monkeypatch Fixture.
-        """
+    # Configure Mock To Raise Exception
+    mock_redis.side_effect = Exception("Unexpected Error")
 
-        # Set Redis URL
-        monkeypatch.setattr(
-            "django.conf.settings.REDIS_DEFAULT_URL",
-            "redis://localhost:6379/0",
-        )
+    # Run Check Status
+    redis_health_check.check_status()
 
-        # Configure Mock To Raise Exception
-        mock_redis.side_effect = Exception("Unexpected Error")
+    # Assert Error Was Added
+    assert len(redis_health_check.errors) == 1
+    assert "Unexpected Error" in str(redis_health_check.errors[0])
+    assert isinstance(redis_health_check.errors[0], HealthCheckException)
 
-        # Run Check Status
-        redis_health_check.check_status()
 
-        # Assert Error Was Added
-        assert len(redis_health_check.errors) == 1
-        assert "Unexpected Error" in str(redis_health_check.errors[0])
-        assert isinstance(redis_health_check.errors[0], HealthCheckException)
+# Test Critical Service Attribute
+def test_critical_service_attribute(redis_health_check: RedisHealthCheck) -> None:
+    """
+    Test Critical Service Attribute Is Set Correctly.
+    """
 
-    # Test Critical Service Attribute
-    def test_critical_service_attribute(self, redis_health_check: RedisHealthCheck) -> None:
-        """
-        Test Critical Service Attribute Is Set Correctly.
-
-        Args:
-            redis_health_check (RedisHealthCheck): Redis Health Check Instance.
-        """
-
-        # Assert Critical Service Is True
-        assert redis_health_check.critical_service is True
+    # Assert Critical Service Is True
+    assert redis_health_check.critical_service is True

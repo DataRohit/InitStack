@@ -36,377 +36,377 @@ def mock_token_cache() -> MagicMock:
     return MagicMock(spec=BaseCache)
 
 
-# Test JWTAuthentication Class
-class TestJWTAuthentication:
+# Test Authenticate Raises On Missing Header
+@patch("apps.common.authentication.jwt_authentication.authentication.get_authorization_header", return_value=b"")
+def test_authenticate_missing_header(mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
     """
-    Test JWTAuthentication Backend.
+    Test Missing Authorization Header Raises Error.
     """
 
-    # Test Authenticate Raises On Missing Header
-    @patch("apps.common.authentication.jwt_authentication.authentication.get_authorization_header", return_value=b"")
-    def test_authenticate_missing_header(self, mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
-        """
-        Test Missing Authorization Header Raises Error.
-        """
+    # Create Dummy Request
+    request: Any = SimpleNamespace()
 
-        # Create Dummy Request
-        request: Any = SimpleNamespace()
+    # Assert Raises Authentication Failed
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate
+        jwt_auth.authenticate(request)
 
-        # Assert Raises Authentication Failed
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate
-            jwt_auth.authenticate(request)
+    # Assert Error Message
+    assert exc.value.detail == {"error": "Authentication Credentials Were Not Provided"}
 
-        # Assert Error Message
-        assert exc.value.detail == {"error": "Authentication Credentials Were Not Provided"}
 
-    # Test Authenticate Raises On Non Bearer Scheme
-    @patch(
-        "apps.common.authentication.jwt_authentication.authentication.get_authorization_header",
-        return_value=b"Basic abc",
+# Test Authenticate Raises On Non Bearer Scheme
+@patch(
+    "apps.common.authentication.jwt_authentication.authentication.get_authorization_header",
+    return_value=b"Basic abc",
+)
+def test_authenticate_non_bearer(mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
+    """
+    Test Non Bearer Scheme Raises Error.
+    """
+
+    # Create Dummy Request
+    request: Any = SimpleNamespace()
+
+    # Assert Raises Authentication Failed
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate
+        jwt_auth.authenticate(request)
+
+    # Assert Error Message
+    assert exc.value.detail == {"error": "Authentication Credentials Were Not Provided"}
+
+
+# Test Authenticate Raises On Invalid Header Parts
+@patch(
+    "apps.common.authentication.jwt_authentication.authentication.get_authorization_header",
+    return_value=b"Bearer a b",
+)
+def test_authenticate_invalid_parts(mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
+    """
+    Test Invalid Authorization Header Parts Raise Error.
+    """
+
+    # Create Dummy Request
+    request: Any = SimpleNamespace()
+
+    # Assert Raises Authentication Failed
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate
+        jwt_auth.authenticate(request)
+
+    # Assert Error Message
+    assert exc.value.detail == {"error": "Invalid Authorization Header"}
+
+
+# Test Authenticate Raises On Unicode Error
+@patch(
+    "apps.common.authentication.jwt_authentication.authentication.get_authorization_header",
+    return_value=b"Bearer \xff\xfe",
+)
+def test_authenticate_unicode_error(mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
+    """
+    Test Unicode Error While Decoding Token Raises Error.
+    """
+
+    # Create Dummy Request
+    request: Any = SimpleNamespace()
+
+    # Assert Raises Authentication Failed
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate
+        jwt_auth.authenticate(request)
+
+    # Assert Error Message
+    assert exc.value.detail == {"error": "Invalid Token Format"}
+
+
+# Test Authenticate Delegates To Authenticate Credentials
+@patch(
+    "apps.common.authentication.jwt_authentication.authentication.get_authorization_header",
+    return_value=b"Bearer token123",
+)
+def test_authenticate_delegates(mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
+    """
+    Test Authenticate Delegates To Authenticate Credentials.
+    """
+
+    # Patch Authenticate Credentials
+    with patch.object(
+        JWTAuthentication,
+        "authenticate_credentials",
+        return_value=(MagicMock(), "token123"),
+    ) as mock_creds:
+        # Call Authenticate
+        result = jwt_auth.authenticate(SimpleNamespace())
+
+    # Assert Result
+    assert isinstance(result, tuple)
+    assert result[1] == "token123"
+
+    # Assert Delegate Called
+    mock_creds.assert_called_once_with("token123")
+
+
+# Test Authenticate Credentials Raises On Empty Token
+def test_authenticate_credentials_empty_token(jwt_auth: JWTAuthentication) -> None:
+    """
+    Test Empty Token Raises Error.
+    """
+
+    # Assert Raises Authentication Failed
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate Credentials
+        jwt_auth.authenticate_credentials("")
+
+    # Assert Error Message
+    assert exc.value.detail == {"error": "Invalid Token"}
+
+
+# Test Token Expired Error
+def test_authenticate_credentials_token_expired(
+    jwt_auth: JWTAuthentication,
+    mock_token_cache: MagicMock,
+    monkeypatch,
+) -> None:
+    """
+    Test Expired Token Raises Proper Error.
+    """
+
+    # Create Token
+    token: str = "expired.token"  # noqa: S105
+
+    # Patch Caches
+    fake_caches: MagicMock = MagicMock()
+    fake_caches.__getitem__.return_value = mock_token_cache
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+
+    # Patch JWT Decode To Raise ExpiredSignatureError
+    monkeypatch.setattr(
+        "apps.common.authentication.jwt_authentication.jwt.decode",
+        MagicMock(side_effect=jwt.ExpiredSignatureError()),
     )
-    def test_authenticate_non_bearer(self, mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
-        """
-        Test Non Bearer Scheme Raises Error.
-        """
 
-        # Create Dummy Request
-        request: Any = SimpleNamespace()
+    # Assert Raises
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate Credentials
+        jwt_auth.authenticate_credentials(token)
 
-        # Assert Raises Authentication Failed
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate
-            jwt_auth.authenticate(request)
+    # Assert Message
+    assert exc.value.detail == {"error": "Token Has Expired"}
 
-        # Assert Error Message
-        assert exc.value.detail == {"error": "Authentication Credentials Were Not Provided"}
 
-    # Test Authenticate Raises On Invalid Header Parts
-    @patch(
-        "apps.common.authentication.jwt_authentication.authentication.get_authorization_header",
-        return_value=b"Bearer a b",
+# Test Invalid Token Error
+def test_authenticate_credentials_invalid_token(
+    jwt_auth: JWTAuthentication,
+    mock_token_cache: MagicMock,
+    monkeypatch,
+) -> None:
+    """
+    Test Invalid Token Raises Proper Error.
+    """
+
+    # Create Token
+    token: str = "bad.token"  # noqa: S105
+
+    # Patch Caches
+    fake_caches: MagicMock = MagicMock()
+    fake_caches.__getitem__.return_value = mock_token_cache
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+
+    # Patch JWT Decode To Raise InvalidTokenError
+    monkeypatch.setattr(
+        "apps.common.authentication.jwt_authentication.jwt.decode",
+        MagicMock(side_effect=jwt.InvalidTokenError()),
     )
-    def test_authenticate_invalid_parts(self, mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
-        """
-        Test Invalid Authorization Header Parts Raise Error.
-        """
 
-        # Create Dummy Request
-        request: Any = SimpleNamespace()
+    # Assert Raises
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate Credentials
+        jwt_auth.authenticate_credentials(token)
 
-        # Assert Raises Authentication Failed
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate
-            jwt_auth.authenticate(request)
+    # Assert Message
+    assert exc.value.detail == {"error": "Invalid Token"}
 
-        # Assert Error Message
-        assert exc.value.detail == {"error": "Invalid Authorization Header"}
 
-    # Test Authenticate Raises On Unicode Error
-    @patch(
-        "apps.common.authentication.jwt_authentication.authentication.get_authorization_header",
-        return_value=b"Bearer \xff\xfe",
-    )
-    def test_authenticate_unicode_error(self, mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
-        """
-        Test Unicode Error While Decoding Token Raises Error.
-        """
+# Test Revoked Token When Cache Miss
+def test_authenticate_credentials_revoked_token_miss(
+    jwt_auth: JWTAuthentication,
+    mock_token_cache: MagicMock,
+    monkeypatch,
+) -> None:
+    """
+    Test Revoked Token When Cache Miss.
+    """
 
-        # Create Dummy Request
-        request: Any = SimpleNamespace()
+    # Token And Payload
+    token: str = "tok123"  # noqa: S105
+    payload: dict[str, Any] = {"sub": "user-id-1"}
 
-        # Assert Raises Authentication Failed
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate
-            jwt_auth.authenticate(request)
+    # Patch Caches And JWT Decode
+    fake_caches: MagicMock = MagicMock()
+    fake_caches.__getitem__.return_value = mock_token_cache
+    mock_token_cache.get.return_value = None
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
 
-        # Assert Error Message
-        assert exc.value.detail == {"error": "Invalid Token Format"}
+    # Assert Raises
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate Credentials
+        jwt_auth.authenticate_credentials(token)
 
-    # Test Authenticate Delegates To Authenticate Credentials
-    @patch(
-        "apps.common.authentication.jwt_authentication.authentication.get_authorization_header",
-        return_value=b"Bearer token123",
-    )
-    def test_authenticate_delegates(self, mock_get_auth: MagicMock, jwt_auth: JWTAuthentication) -> None:
-        """
-        Test Authenticate Delegates To Authenticate Credentials.
-        """
+    # Assert Message
+    assert exc.value.detail == {"error": "Token Has Been Revoked"}
 
-        # Patch Authenticate Credentials
-        with patch.object(
-            JWTAuthentication,
-            "authenticate_credentials",
-            return_value=(MagicMock(), "token123"),
-        ) as mock_creds:
-            # Call Authenticate
-            result = jwt_auth.authenticate(SimpleNamespace())
 
-        # Assert Result
-        assert isinstance(result, tuple)
-        assert result[1] == "token123"
+# Test Revoked Token When Cache Mismatch
+def test_authenticate_credentials_revoked_token_mismatch(
+    jwt_auth: JWTAuthentication,
+    mock_token_cache: MagicMock,
+    monkeypatch,
+) -> None:
+    """
+    Test Revoked Token When Cache Mismatch.
+    """
 
-        # Assert Delegate Called
-        mock_creds.assert_called_once_with("token123")
+    # Token And Payload
+    token: str = "tok123"  # noqa: S105
+    payload: dict[str, Any] = {"sub": "user-id-1"}
 
-    # Test Authenticate Credentials Raises On Empty Token
-    def test_authenticate_credentials_empty_token(self, jwt_auth: JWTAuthentication) -> None:
-        """
-        Test Empty Token Raises Error.
-        """
+    # Patch Caches And JWT Decode
+    fake_caches: MagicMock = MagicMock()
+    fake_caches.__getitem__.return_value = mock_token_cache
+    mock_token_cache.get.return_value = "different"
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
 
-        # Assert Raises Authentication Failed
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate Credentials
-            jwt_auth.authenticate_credentials("")
+    # Assert Raises
+    with pytest.raises(exceptions.AuthenticationFailed) as exc:
+        # Call Authenticate Credentials
+        jwt_auth.authenticate_credentials(token)
 
-        # Assert Error Message
-        assert exc.value.detail == {"error": "Invalid Token"}
+    # Assert Message
+    assert exc.value.detail == {"error": "Token Has Been Revoked"}
 
-    # Test Token Expired Error
-    def test_authenticate_credentials_token_expired(
-        self,
-        jwt_auth: JWTAuthentication,
-        mock_token_cache: MagicMock,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Expired Token Raises Proper Error.
-        """
 
-        # Create Token
-        token: str = "expired.token"  # noqa: S105
+# Test User Not Found
+def test_authenticate_credentials_user_not_found(
+    jwt_auth: JWTAuthentication,
+    mock_token_cache: MagicMock,
+    monkeypatch,
+) -> None:
+    """
+    Test User Not Found Raises Error.
+    """
 
-        # Patch Caches
-        fake_caches: MagicMock = MagicMock()
-        fake_caches.__getitem__.return_value = mock_token_cache
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+    # Token And Payload
+    token: str = "tok123"  # noqa: S105
+    payload: dict[str, Any] = {"sub": "user-id-1"}
 
-        # Patch JWT Decode To Raise ExpiredSignatureError
-        monkeypatch.setattr(
-            "apps.common.authentication.jwt_authentication.jwt.decode",
-            MagicMock(side_effect=jwt.ExpiredSignatureError()),
-        )
+    # Patch Caches And JWT Decode
+    fake_caches: MagicMock = MagicMock()
+    fake_caches.__getitem__.return_value = mock_token_cache
+    mock_token_cache.get.return_value = token
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
 
-        # Assert Raises
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate Credentials
-            jwt_auth.authenticate_credentials(token)
+    # Patch User Lookup To Raise DoesNotExist
+    with (
+        patch(
+            "apps.common.authentication.jwt_authentication.User.objects.get",
+            side_effect=Exception(),
+        ),
+        patch(
+            "apps.common.authentication.jwt_authentication.User.DoesNotExist",
+            new=Exception,
+        ),
+        pytest.raises(exceptions.AuthenticationFailed) as exc,
+    ):
+        # Call Authenticate Credentials
+        jwt_auth.authenticate_credentials(token)
 
-        # Assert Message
-        assert exc.value.detail == {"error": "Token Has Expired"}
+    # Assert Message
+    assert exc.value.detail == {"error": "User Not Found"}
 
-    # Test Invalid Token Error
-    def test_authenticate_credentials_invalid_token(
-        self,
-        jwt_auth: JWTAuthentication,
-        mock_token_cache: MagicMock,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Invalid Token Raises Proper Error.
-        """
 
-        # Create Token
-        token: str = "bad.token"  # noqa: S105
+# Test Inactive User
+def test_authenticate_credentials_inactive_user(
+    jwt_auth: JWTAuthentication,
+    mock_token_cache: MagicMock,
+    monkeypatch,
+) -> None:
+    """
+    Test Inactive User Raises Error.
+    """
 
-        # Patch Caches
-        fake_caches: MagicMock = MagicMock()
-        fake_caches.__getitem__.return_value = mock_token_cache
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+    # Token And Payload
+    token: str = "tok123"  # noqa: S105
+    payload: dict[str, Any] = {"sub": "user-id-1"}
 
-        # Patch JWT Decode To Raise InvalidTokenError
-        monkeypatch.setattr(
-            "apps.common.authentication.jwt_authentication.jwt.decode",
-            MagicMock(side_effect=jwt.InvalidTokenError()),
-        )
+    # Patch Caches And JWT Decode
+    fake_caches: MagicMock = MagicMock()
+    fake_caches.__getitem__.return_value = mock_token_cache
+    mock_token_cache.get.return_value = token
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
 
-        # Assert Raises
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate Credentials
-            jwt_auth.authenticate_credentials(token)
+    # Patch User Lookup To Return Inactive User
+    user_obj: Any = SimpleNamespace(is_active=False)
 
-        # Assert Message
-        assert exc.value.detail == {"error": "Invalid Token"}
+    # Assert Raises
+    with (
+        patch("apps.common.authentication.jwt_authentication.User.objects.get", return_value=user_obj),
+        pytest.raises(exceptions.AuthenticationFailed) as exc,
+    ):
+        # Call Authenticate Credentials
+        jwt_auth.authenticate_credentials(token)
 
-    # Test Revoked Token When Cache Miss
-    def test_authenticate_credentials_revoked_token_miss(
-        self,
-        jwt_auth: JWTAuthentication,
-        mock_token_cache: MagicMock,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Revoked Token When Cache Miss.
-        """
+    # Assert Message
+    assert exc.value.detail == {"error": "User Account Is Disabled"}
 
-        # Token And Payload
-        token: str = "tok123"  # noqa: S105
-        payload: dict[str, Any] = {"sub": "user-id-1"}
 
-        # Patch Caches And JWT Decode
-        fake_caches: MagicMock = MagicMock()
-        fake_caches.__getitem__.return_value = mock_token_cache
-        mock_token_cache.get.return_value = None
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
+# Test Successful Authentication
+def test_authenticate_credentials_success(
+    jwt_auth: JWTAuthentication,
+    mock_token_cache: MagicMock,
+    monkeypatch,
+) -> None:
+    """
+    Test Successful Credentials Authentication.
+    """
 
-        # Assert Raises
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate Credentials
-            jwt_auth.authenticate_credentials(token)
+    # Token And Payload
+    token: str = "tok123"  # noqa: S105
+    payload: dict[str, Any] = {"sub": "user-id-1"}
 
-        # Assert Message
-        assert exc.value.detail == {"error": "Token Has Been Revoked"}
+    # Patch Caches And JWT Decode
+    fake_caches: MagicMock = MagicMock()
+    fake_caches.__getitem__.return_value = mock_token_cache
+    mock_token_cache.get.return_value = token
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
+    monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
 
-    # Test Revoked Token When Cache Mismatch
-    def test_authenticate_credentials_revoked_token_mismatch(
-        self,
-        jwt_auth: JWTAuthentication,
-        mock_token_cache: MagicMock,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Revoked Token When Cache Mismatch.
-        """
+    # Patch User Lookup To Return Active User
+    user_obj: Any = SimpleNamespace(is_active=True)
 
-        # Token And Payload
-        token: str = "tok123"  # noqa: S105
-        payload: dict[str, Any] = {"sub": "user-id-1"}
+    # Assert Returns
+    with patch("apps.common.authentication.jwt_authentication.User.objects.get", return_value=user_obj):
+        # Call Authenticate Credentials
+        user, returned_token = jwt_auth.authenticate_credentials(token)
 
-        # Patch Caches And JWT Decode
-        fake_caches: MagicMock = MagicMock()
-        fake_caches.__getitem__.return_value = mock_token_cache
-        mock_token_cache.get.return_value = "different"
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
+    # Assert Values
+    assert user is user_obj
+    assert returned_token == token
 
-        # Assert Raises
-        with pytest.raises(exceptions.AuthenticationFailed) as exc:
-            # Call Authenticate Credentials
-            jwt_auth.authenticate_credentials(token)
 
-        # Assert Message
-        assert exc.value.detail == {"error": "Token Has Been Revoked"}
+# Test Authenticate Header Value
+def test_authenticate_header(jwt_auth: JWTAuthentication) -> None:
+    """
+    Test Authenticate Header Returns Bearer Scheme.
+    """
 
-    # Test User Not Found
-    def test_authenticate_credentials_user_not_found(
-        self,
-        jwt_auth: JWTAuthentication,
-        mock_token_cache: MagicMock,
-        monkeypatch,
-    ) -> None:
-        """
-        Test User Not Found Raises Error.
-        """
+    # Create Dummy Request
+    request: Any = SimpleNamespace()
 
-        # Token And Payload
-        token: str = "tok123"  # noqa: S105
-        payload: dict[str, Any] = {"sub": "user-id-1"}
-
-        # Patch Caches And JWT Decode
-        fake_caches: MagicMock = MagicMock()
-        fake_caches.__getitem__.return_value = mock_token_cache
-        mock_token_cache.get.return_value = token
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
-
-        # Patch User Lookup To Raise DoesNotExist
-        with (
-            patch(
-                "apps.common.authentication.jwt_authentication.User.objects.get",
-                side_effect=Exception(),
-            ),
-            patch(
-                "apps.common.authentication.jwt_authentication.User.DoesNotExist",
-                new=Exception,
-            ),
-            pytest.raises(exceptions.AuthenticationFailed) as exc,
-        ):
-            # Call Authenticate Credentials
-            jwt_auth.authenticate_credentials(token)
-
-        # Assert Message
-        assert exc.value.detail == {"error": "User Not Found"}
-
-    # Test Inactive User
-    def test_authenticate_credentials_inactive_user(
-        self,
-        jwt_auth: JWTAuthentication,
-        mock_token_cache: MagicMock,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Inactive User Raises Error.
-        """
-
-        # Token And Payload
-        token: str = "tok123"  # noqa: S105
-        payload: dict[str, Any] = {"sub": "user-id-1"}
-
-        # Patch Caches And JWT Decode
-        fake_caches: MagicMock = MagicMock()
-        fake_caches.__getitem__.return_value = mock_token_cache
-        mock_token_cache.get.return_value = token
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
-
-        # Patch User Lookup To Return Inactive User
-        user_obj: Any = SimpleNamespace(is_active=False)
-
-        # Assert Raises
-        with (
-            patch("apps.common.authentication.jwt_authentication.User.objects.get", return_value=user_obj),
-            pytest.raises(exceptions.AuthenticationFailed) as exc,
-        ):
-            # Call Authenticate Credentials
-            jwt_auth.authenticate_credentials(token)
-
-        # Assert Message
-        assert exc.value.detail == {"error": "User Account Is Disabled"}
-
-    # Test Successful Authentication
-    def test_authenticate_credentials_success(
-        self,
-        jwt_auth: JWTAuthentication,
-        mock_token_cache: MagicMock,
-        monkeypatch,
-    ) -> None:
-        """
-        Test Successful Credentials Authentication.
-        """
-
-        # Token And Payload
-        token: str = "tok123"  # noqa: S105
-        payload: dict[str, Any] = {"sub": "user-id-1"}
-
-        # Patch Caches And JWT Decode
-        fake_caches: MagicMock = MagicMock()
-        fake_caches.__getitem__.return_value = mock_token_cache
-        mock_token_cache.get.return_value = token
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.caches", fake_caches)
-        monkeypatch.setattr("apps.common.authentication.jwt_authentication.jwt.decode", MagicMock(return_value=payload))
-
-        # Patch User Lookup To Return Active User
-        user_obj: Any = SimpleNamespace(is_active=True)
-
-        # Assert Returns
-        with patch("apps.common.authentication.jwt_authentication.User.objects.get", return_value=user_obj):
-            # Call Authenticate Credentials
-            user, returned_token = jwt_auth.authenticate_credentials(token)
-
-        # Assert Values
-        assert user is user_obj
-        assert returned_token == token
-
-    # Test Authenticate Header Value
-    def test_authenticate_header(self, jwt_auth: JWTAuthentication) -> None:
-        """
-        Test Authenticate Header Returns Bearer Scheme.
-        """
-
-        # Create Dummy Request
-        request: Any = SimpleNamespace()
-
-        # Assert Header Value
-        assert jwt_auth.authenticate_header(request) == "Bearer"
+    # Assert Header Value
+    assert jwt_auth.authenticate_header(request) == "Bearer"
