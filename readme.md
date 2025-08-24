@@ -4,6 +4,7 @@
 [![Project Status: Active](https://img.shields.io/badge/Project%20Status-Active-brightgreen)](https://github.com/DataRohit/InitStack)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](./license)
 [![Version](https://img.shields.io/badge/version-0.1.0-blue)](#)
+[![Coverage: 100%](https://img.shields.io/badge/Coverage-100%25-brightgreen.svg)](#)
 
 <!-- Core Technologies -->
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg?logo=python&logoColor=white)](https://www.python.org/downloads/release/python-3130/)
@@ -52,6 +53,7 @@
 - **Ruff** Linting, **Mypy** Type Checking, **Pytest** + Coverage.
 - **Djlint** For Templates, **Django Extensions**, **Factory Boy** + **Faker**.
 - **SonarQube** Integration Via `make sonar-scan`.
+- **100% Test Coverage Enforced** (Pytest With `--cov-fail-under=100`).
 
 ## 🛠️ Tech Stack
 
@@ -170,6 +172,9 @@ make ruff-check  # or 'make ruff-lint' to auto-fix issues
 mypy .
 pytest -q
 ```
+
+- Coverage Threshold Is Enforced At 100% Via `pytest.ini` (`--cov-fail-under=100`).
+- HTML Coverage Report Is Generated At `htmlcov/index.html`.
 
 Ruff/Mypy/Pytest Are Configured In `pyproject.toml`.
 
