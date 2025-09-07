@@ -65,6 +65,7 @@ help:
 	@echo ""
 	@printf "${GREEN}Cleaning:${NC}\n"
 	@echo "  clean-all       - Remove Python And Tooling Artifacts"
+	@echo "  fix-line-endings - Convert Line Endings To Unix Format For Windows Compatibility"
 	@echo ""
 
 # Sonar-Scan Target: Run SonarQube Analysis
@@ -196,6 +197,16 @@ clean-all:
 	@printf "${GREEN}Cleanup Completed Successfully!${NC}\n"
 	@echo ""
 
+# Fix-Line-Endings Target: Convert Line Endings To Unix Format
+fix-line-endings:
+	@echo ""
+	@printf "${YELLOW}Converting Line Endings For Windows Compatibility...${NC}\n"
+	dos2unix ./compose/django/entrypoint
+	dos2unix ./compose/django/start
+	dos2unix ./compose/celery-flower/start
+	@printf "${GREEN}Line Endings Converted Successfully!${NC}\n"
+	@echo ""
+
 # Ruff-Check Target: Run Ruff Linter In Check Mode
 ruff-check:
 	@echo ""
@@ -216,4 +227,4 @@ ruff-lint:
 .PHONY: help sonar-scan ruff-check ruff-lint clean-all \
 	podman-build podman-up podman-restart podman-clean \
 	podman-down \
-	docker-build docker-up docker-restart docker-clean docker-down
+	docker-build docker-up docker-restart docker-clean docker-down fix-line-endings
