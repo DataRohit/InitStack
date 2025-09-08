@@ -36,6 +36,13 @@ PODMAN_COMPOSE ?= podman compose
 SONAR_HOST_URL ?= http://localhost:9000
 SONAR_PROJECT_KEY ?= InitStack
 
+# Environment Variables Loading
+ifneq (,$(wildcard ./.env))
+    # Read .env File And Export Variables
+    include ./.env
+    export $(shell sed 's/=.*//' ./.env)
+endif
+
 # Help Target: Show Available Makefile Commands
 help:
 	@echo ""
@@ -72,11 +79,20 @@ help:
 sonar-scan:
 	@echo ""
 	@printf "${YELLOW}Starting Sonarscanner...${NC}\n"
-	@[ -n "$$SONAR_TOKEN" ] || (printf "${RED}SONAR_TOKEN Is Not Set. Export SONAR_TOKEN And Re-Run.${NC}\n"; exit 1)
-	sonar-scanner \
-		-D sonar.host.url=$(SONAR_HOST_URL) \
-		-D sonar.projectKey=$(SONAR_PROJECT_KEY) \
-		-D sonar.login=$$SONAR_TOKEN
+	@if [ -f .env ]; then \
+		export $$(cat .env | grep -v '^#' | xargs) && \
+		[ -n "$$SONAR_TOKEN" ] || (printf "${RED}SONAR_TOKEN Is Not Set. Check Your .env File.${NC}\n"; exit 1) && \
+		pysonar \
+			--sonar-host-url $(SONAR_HOST_URL) \
+			--sonar-project-key $(SONAR_PROJECT_KEY) \
+			--token $$SONAR_TOKEN; \
+	else \
+		[ -n "$$SONAR_TOKEN" ] || (printf "${RED}SONAR_TOKEN Is Not Set. Export SONAR_TOKEN And Re-Run.${NC}\n"; exit 1) && \
+		pysonar \
+			--sonar-host-url $(SONAR_HOST_URL) \
+			--sonar-project-key $(SONAR_PROJECT_KEY) \
+			--token $$SONAR_TOKEN; \
+	fi
 	@printf "${GREEN}SonarQube Scan Completed!${NC}\n"
 	@echo ""
 
