@@ -1,0 +1,17 @@
+[run]
+omit =
+    apps/templates/**/*.html
+    apps/**/templates/**/*.html
+    **/tests/**
+    **/migrations/**
+    apps/**/apps.py
+    config/**
+
+[report]
+omit =
+    apps/templates/**/*.html
+    apps/**/templates/**/*.html
+    **/tests/**
+    **/migrations/**
+    apps/**/apps.py
+    config/**

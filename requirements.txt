@@ -135,6 +135,7 @@ pyjwt==2.10.1
 pyopenssl==25.1.0
 pysonar==1.1.0.2035
 pytest==8.4.1
+pytest-asyncio==1.1.0
 pytest-cov==6.2.1
 pytest-django==4.11.1
 pytest-sugar==1.0.0

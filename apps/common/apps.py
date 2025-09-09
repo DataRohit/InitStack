@@ -124,7 +124,7 @@ class CommonConfig(AppConfig):
 
                 try:
                     # Third Party Import
-                    from silk.utils.encoding import force_str
+                    from silk.utils.encoding import force_str  # pyright: ignore[reportMissingImports]
 
                     # Return Force Str Result
                     return force_str(param)
