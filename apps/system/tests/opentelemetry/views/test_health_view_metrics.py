@@ -1,5 +1,3 @@
-# ruff: noqa: N806
-
 # Standard Library Imports
 from types import SimpleNamespace
 from unittest.mock import MagicMock
@@ -18,20 +16,20 @@ def test_observe_cpu_percent_success() -> None:
     # Patch Dependencies
     with (
         patch.object(hv_metrics.psutil, "cpu_percent", return_value=12.3),
-        patch.object(hv_metrics, "Observation") as Observation,
+        patch.object(hv_metrics, "Observation") as observation_mock,
     ):
         # Type Hint
-        Observation: MagicMock
+        observation_mock: MagicMock
 
         # Configure Observation Return
-        Observation.side_effect = lambda v: ("OBS", v)
+        observation_mock.side_effect = lambda v: ("OBS", v)
 
         # Call Callback
         observations = hv_metrics._observe_cpu_percent(options=MagicMock())
 
     # Assert Observation
     assert observations == [("OBS", 12.3)]
-    Observation.assert_called_once_with(12.3)
+    observation_mock.assert_called_once_with(12.3)
 
 
 # Test CPU Observation Error
@@ -81,20 +79,20 @@ def test_observe_memory_percent_success() -> None:
     # Patch Dependencies
     with (
         patch.object(hv_metrics.psutil, "virtual_memory", return_value=vmem),
-        patch.object(hv_metrics, "Observation") as Observation,
+        patch.object(hv_metrics, "Observation") as observation_mock,
     ):
         # Type Hint
-        Observation: MagicMock
+        observation_mock: MagicMock
 
         # Configure Observation Return
-        Observation.side_effect = lambda v: ("OBS", v)
+        observation_mock.side_effect = lambda v: ("OBS", v)
 
         # Call Callback
         observations = hv_metrics._observe_memory_percent(options=MagicMock())
 
     # Assert Observation
     assert observations == [("OBS", 77.7)]
-    Observation.assert_called_once_with(77.7)
+    observation_mock.assert_called_once_with(77.7)
 
 
 # Test Memory Observation Error
@@ -144,20 +142,20 @@ def test_observe_disk_percent_success() -> None:
     # Patch Dependencies
     with (
         patch.object(hv_metrics.psutil, "disk_usage", return_value=dusage),
-        patch.object(hv_metrics, "Observation") as Observation,
+        patch.object(hv_metrics, "Observation") as observation_mock,
     ):
         # Type Hint
-        Observation: MagicMock
+        observation_mock: MagicMock
 
         # Configure Observation Return
-        Observation.side_effect = lambda v: ("OBS", v)
+        observation_mock.side_effect = lambda v: ("OBS", v)
 
         # Call Callback
         observations = hv_metrics._observe_disk_percent(options=MagicMock())
 
     # Assert Observation
     assert observations == [("OBS", 55.5)]
-    Observation.assert_called_once_with(55.5)
+    observation_mock.assert_called_once_with(55.5)
 
 
 # Test Disk Observation Error

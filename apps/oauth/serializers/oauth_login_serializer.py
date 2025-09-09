@@ -8,6 +8,12 @@ from rest_framework import status
 # Local Imports
 from apps.common.serializers.generic_response_serializer import GenericResponseSerializer
 
+# OAuth Auth URL Text
+OAUTH_AUTH_URL_TEXT: str = "OAuth Auth URL"
+
+# OAuth Auth URL Label
+OAUTH_AUTH_URL_LABEL: str = _(OAUTH_AUTH_URL_TEXT)
+
 
 # OAuth Login Response Serializer Class
 @extend_schema_serializer(
@@ -47,8 +53,8 @@ class OAuthLoginResponseSerializer(GenericResponseSerializer):
 
         # Auth URL Field
         auth_url: serializers.CharField = serializers.CharField(
-            help_text=_("OAuth Auth URL"),
-            label=_("OAuth Auth URL"),
+            help_text=OAUTH_AUTH_URL_LABEL,
+            label=OAUTH_AUTH_URL_LABEL,
             required=True,
             allow_null=False,
             error_messages={
@@ -59,8 +65,8 @@ class OAuthLoginResponseSerializer(GenericResponseSerializer):
 
     # Data Field
     data: OAuthAuthURLSerializer = OAuthAuthURLSerializer(
-        help_text=_("OAuth Auth URL"),
-        label=_("OAuth Auth URL"),
+        help_text=OAUTH_AUTH_URL_LABEL,
+        label=OAUTH_AUTH_URL_LABEL,
         required=True,
         allow_null=False,
         error_messages={
@@ -68,3 +74,7 @@ class OAuthLoginResponseSerializer(GenericResponseSerializer):
             "null": _("OAuth Auth URL Cannot Be Null"),
         },
     )
+
+
+# Exports
+__all__: list[str] = ["OAuthLoginResponseSerializer"]

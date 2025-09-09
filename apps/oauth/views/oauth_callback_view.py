@@ -73,6 +73,268 @@ class OAuthCallbackView(APIView):
     http_method_names: ClassVar[list[str]] = ["get"]
     object_label: ClassVar[str] = "user"
 
+    # Validate JWT Token Function
+    def _is_token_valid(self, token: str | None, secret: str, *, token_type: str) -> bool:
+        """
+        Validate JWT Token.
+
+        Args:
+            token (str | None): Jwt Token To Validate.
+            secret (str): Secret Key For Token Validation.
+            token_type (str): Token Type Label For Metrics.
+
+        Returns:
+            bool: True If Token Is Valid, False Otherwise.
+        """
+
+        # If Token Is Missing
+        if not token:
+            # Return False
+            return False
+
+        try:
+            # Decode Token
+            jwt.decode(
+                jwt=token,
+                key=secret,
+                algorithms=["HS256"],
+                options={
+                    "verify_signature": True,
+                    "verify_exp": True,
+                    "verify_aud": True,
+                    "verify_iss": True,
+                },
+                audience=slugify(settings.PROJECT_NAME),
+                issuer=slugify(settings.PROJECT_NAME),
+            )
+
+            # Record Token Validation Success
+            record_token_validation(token_type=token_type, success=True)
+
+        except jwt.InvalidTokenError:
+            # Record Token Validation Failure
+            record_token_validation(token_type=token_type, success=False)
+
+            # Return False
+            return False
+
+        # Return True
+        return True
+
+    # Ensure Token Present Function
+    def _ensure_token(  # noqa: PLR0913
+        self,
+        *,
+        token_cache: BaseCache,
+        cache_key: str,
+        cached_token: str | None,
+        secret: str,
+        token_type: str,
+        now_dt: datetime.datetime,
+        expiry_seconds: int,
+        with_metrics: bool,
+    ) -> tuple[str, bool]:
+        """
+        Ensure Cached Token Is Valid Or Generate And Cache A New One.
+
+        Args:
+            token_cache (BaseCache): Token Cache Backend.
+            cache_key (str): Cache Key For Token.
+            cached_token (str | None): Existing Cached Token.
+            secret (str): Jwt Secret For Token Type.
+            token_type (str): Token Type Label.
+            now_dt (datetime.datetime): Current Time.
+            expiry_seconds (int): Expiry Seconds For Token.
+            with_metrics (bool): Flag To Record Cache And Token Metrics.
+
+        Returns:
+            tuple[str, bool]: Tuple Of Token And Whether A New Token Was Generated.
+        """
+
+        # If Token Is Invalid
+        if not self._is_token_valid(cached_token, secret, token_type=token_type):
+            # Generate New Token
+            payload: dict[str, Any] = {
+                "sub": cache_key.rsplit("_", 1)[-1],
+                "iss": slugify(settings.PROJECT_NAME),
+                "aud": slugify(settings.PROJECT_NAME),
+                "iat": now_dt,
+                "exp": now_dt + datetime.timedelta(seconds=expiry_seconds),
+            }
+
+            # Encode New Token
+            new_token: str = jwt.encode(
+                payload=payload,
+                key=secret,
+                algorithm="HS256",
+            )
+
+            # Cache New Token
+            token_cache.set(
+                key=cache_key,
+                value=new_token,
+                timeout=expiry_seconds,
+            )
+
+            # If With Metrics
+            if with_metrics:
+                # Record Cache Set Operation
+                record_cache_operation(operation="set", cache_type="token_cache", success=True)
+
+                # If Token Type Is Access
+                if token_type == "access":  # noqa: S105
+                    # Record Access Token Generated
+                    record_callback_access_token_generated()
+
+                else:
+                    # Record Refresh Token Generated
+                    record_callback_refresh_token_generated()
+
+            # Return New Token And True
+            return new_token, True
+
+        # If With Metrics
+        if with_metrics:
+            # If Token Type Is Access
+            if token_type == "access":  # noqa: S105
+                # Record Access Token Reused
+                record_callback_access_token_reused()
+
+            else:
+                # Record Refresh Token Reused
+                record_callback_refresh_token_reused()
+
+        # Return Cached Token And False
+        return cached_token or "", False
+
+    # Handle Authenticated User Function
+    def _handle_authenticated_user(
+        self,
+        *,
+        request: Request,
+        with_metrics: bool,
+        start_time: float | None,
+    ) -> Response:
+        """
+        Build Tokens, Update User, And Return Success Response.
+
+        Args:
+            request (Request): Http Request Object.
+            with_metrics (bool): Flag To Record Additional Metrics.
+            start_time (float | None): Start Time For Duration Metrics.
+
+        Returns:
+            Response: Http 200 Response With User And Tokens Or 400 If User Missing.
+        """
+
+        # Get User
+        user = getattr(request, "user", None)
+
+        # If User Is Not Authenticated
+        if not (user and user.is_authenticated):
+            # If With Metrics And Start Time Is Not None
+            if with_metrics and start_time is not None:
+                # Get Duration
+                duration_400_user: float = time.perf_counter() - start_time
+
+                # Record User Action
+                record_user_action(action_type="oauth_callback", success=False)
+
+                # Record HTTP Request
+                record_http_request(
+                    method=request.method,
+                    endpoint=request.path,
+                    status_code=int(status.HTTP_400_BAD_REQUEST),
+                    duration=duration_400_user,
+                )
+
+            # Return Bad Request Response
+            return Response(data={"error": "User Not Found"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Get Token Cache
+        token_cache: BaseCache = caches["token_cache"]
+
+        # Get User ID String
+        user_id_str: str = str(user.id)
+
+        # Get Access Key
+        access_key: str = f"access_token_{user_id_str}"
+
+        # Get Refresh Key
+        refresh_key: str = f"refresh_token_{user_id_str}"
+
+        # Get Cached Access Token
+        cached_access_token: str | None = token_cache.get(access_key)
+
+        # Get Cached Refresh Token
+        cached_refresh_token: str | None = token_cache.get(refresh_key)
+
+        # If With Metrics
+        if with_metrics:
+            # Record Cache Operation
+            record_cache_operation(operation="get", cache_type="token_cache", success=bool(cached_access_token))
+            record_cache_operation(operation="get", cache_type="token_cache", success=bool(cached_refresh_token))
+
+        # Get Current Time
+        now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
+
+        # Ensure Access Token
+        access_token, _ = self._ensure_token(
+            token_cache=token_cache,
+            cache_key=access_key,
+            cached_token=cached_access_token,
+            secret=settings.ACCESS_TOKEN_SECRET,
+            token_type="access",  # noqa: S106
+            now_dt=now_dt,
+            expiry_seconds=settings.ACCESS_TOKEN_EXPIRY,
+            with_metrics=with_metrics,
+        )
+
+        # Ensure Refresh Token
+        refresh_token, _ = self._ensure_token(
+            token_cache=token_cache,
+            cache_key=refresh_key,
+            cached_token=cached_refresh_token,
+            secret=settings.REFRESH_TOKEN_SECRET,
+            token_type="refresh",  # noqa: S106
+            now_dt=now_dt,
+            expiry_seconds=settings.REFRESH_TOKEN_EXPIRY,
+            with_metrics=with_metrics,
+        )
+
+        # Update User Last Login
+        user.last_login = now_dt
+        user.save(update_fields=["last_login"])
+
+        # Serialize User Data
+        user_data: dict[str, Any] = UserDetailSerializer(user).data
+
+        # Attach Tokens
+        user_data["access_token"] = access_token
+        user_data["refresh_token"] = refresh_token
+
+        # Record Callback Complete Success
+        record_callback_complete_success()
+
+        # If With Metrics And Start Time Is Not None
+        if with_metrics and start_time is not None:
+            # Get Duration
+            duration_200: float = time.perf_counter() - start_time
+
+            # Record User Action
+            record_user_action(action_type="oauth_callback", success=True)
+
+            # Record HTTP Request
+            record_http_request(
+                method=request.method,
+                endpoint=request.path,
+                status_code=int(status.HTTP_200_OK),
+                duration=duration_200,
+            )
+
+        # Return Success Response
+        return Response(data=user_data, status=status.HTTP_200_OK)
+
     # Get Method For OAuth Callback
     @extend_schema(
         operation_id="OAuth Callback",
@@ -117,7 +379,7 @@ class OAuthCallbackView(APIView):
         summary="OAuth Callback",
         tags=["OAuth"],
     )
-    def get(self, request: Request, backend_name: str) -> Response:  # noqa: C901, PLR0915
+    def get(self, request: Request, backend_name: str) -> Response:
         """
         Process OAuth Callback Request.
 
@@ -168,343 +430,32 @@ class OAuthCallbackView(APIView):
                 user=(request.user.is_authenticated and request.user) or None,
             )
 
-            # Helper To Validate Token
-            def _is_token_valid(token: str | None, secret: str, *, token_type: str) -> bool:
-                """
-                Validate A JWT Token.
-
-                Args:
-                    token (str | None): JWT Token To Validate.
-                    secret (str): Secret Key For Token Validation.
-
-                Returns:
-                    bool: True If Token Is Valid, False Otherwise.
-                """
-
-                # If Token Is Missing
-                if not token:
-                    # Return False
-                    return False
-
-                try:
-                    # Try To Validate Token
-                    jwt.decode(
-                        jwt=token,
-                        key=secret,
-                        algorithms=["HS256"],
-                        options={
-                            "verify_signature": True,
-                            "verify_exp": True,
-                            "verify_aud": True,
-                            "verify_iss": True,
-                        },
-                        audience=slugify(settings.PROJECT_NAME),
-                        issuer=slugify(settings.PROJECT_NAME),
-                    )
-
-                    # Record Token Validation Success
-                    record_token_validation(token_type=token_type, success=True)
-
-                except jwt.InvalidTokenError:
-                    # Record Token Validation Failure
-                    record_token_validation(token_type=token_type, success=False)
-
-                    # Return False If Token Is Invalid
-                    return False
-
-                # Return True If Token Is Valid
-                return True
-
             # If Result Is A Redirect Response
             if isinstance(result, HttpResponseRedirect):
-                # Get User
-                user = getattr(request, "user", None)
-
-                # If User Exists And User Is Authenticated
-                if user and user.is_authenticated:
-                    # Get Token Cache
-                    token_cache: BaseCache = caches["token_cache"]
-
-                    # Build User ID String
-                    user_id_str: str = str(user.id)
-
-                    # Build Cache Keys
-                    access_key: str = f"access_token_{user_id_str}"
-                    refresh_key: str = f"refresh_token_{user_id_str}"
-
-                    # Get Cached Tokens
-                    cached_access_token: str | None = token_cache.get(access_key)
-                    cached_refresh_token: str | None = token_cache.get(refresh_key)
-
-                    # Record Cache Get Operations
-                    record_cache_operation(
-                        operation="get",
-                        cache_type="token_cache",
-                        success=bool(cached_access_token),
-                    )
-                    record_cache_operation(
-                        operation="get",
-                        cache_type="token_cache",
-                        success=bool(cached_refresh_token),
-                    )
-
-                    # Get Current Time
-                    now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
-
-                    # If Access Token Is Invalid
-                    if not _is_token_valid(
-                        cached_access_token,
-                        settings.ACCESS_TOKEN_SECRET,
-                        token_type="access",  # noqa: S106
-                    ):
-                        # Build Access Token Payload
-                        access_payload: dict[str, Any] = {
-                            "sub": user_id_str,
-                            "iss": slugify(settings.PROJECT_NAME),
-                            "aud": slugify(settings.PROJECT_NAME),
-                            "iat": now_dt,
-                            "exp": now_dt + datetime.timedelta(seconds=settings.ACCESS_TOKEN_EXPIRY),
-                        }
-
-                        # Generate New Access Token
-                        new_access_token: str = jwt.encode(
-                            payload=access_payload,
-                            key=settings.ACCESS_TOKEN_SECRET,
-                            algorithm="HS256",
-                        )
-
-                        # Cache New Access Token
-                        token_cache.set(
-                            access_key,
-                            new_access_token,
-                            timeout=settings.ACCESS_TOKEN_EXPIRY,
-                        )
-
-                        # Record Cache Set Operation
-                        record_cache_operation(
-                            operation="set",
-                            cache_type="token_cache",
-                            success=True,
-                        )
-
-                        # Update Cached Access Token
-                        cached_access_token = new_access_token
-
-                        # Record Access Token Generated
-                        record_callback_access_token_generated()
-
-                    else:
-                        # Record Access Token Reused
-                        record_callback_access_token_reused()
-
-                    # If Refresh Token Is Invalid
-                    if not _is_token_valid(
-                        cached_refresh_token,
-                        settings.REFRESH_TOKEN_SECRET,
-                        token_type="refresh",  # noqa: S106
-                    ):
-                        # Build Refresh Token Payload
-                        refresh_payload: dict[str, Any] = {
-                            "sub": user_id_str,
-                            "iss": slugify(settings.PROJECT_NAME),
-                            "aud": slugify(settings.PROJECT_NAME),
-                            "iat": now_dt,
-                            "exp": now_dt + datetime.timedelta(seconds=settings.REFRESH_TOKEN_EXPIRY),
-                        }
-
-                        # Generate New Refresh Token
-                        new_refresh_token: str = jwt.encode(
-                            payload=refresh_payload,
-                            key=settings.REFRESH_TOKEN_SECRET,
-                            algorithm="HS256",
-                        )
-
-                        # Cache New Refresh Token
-                        token_cache.set(
-                            refresh_key,
-                            new_refresh_token,
-                            timeout=settings.REFRESH_TOKEN_EXPIRY,
-                        )
-
-                        # Record Cache Set Operation
-                        record_cache_operation(
-                            operation="set",
-                            cache_type="token_cache",
-                            success=True,
-                        )
-
-                        # Update Cached Refresh Token
-                        cached_refresh_token = new_refresh_token
-
-                        # Record Refresh Token Generated
-                        record_callback_refresh_token_generated()
-
-                    else:
-                        # Record Refresh Token Reused
-                        record_callback_refresh_token_reused()
-
-                    # Update Last Login
-                    user.last_login = now_dt
-                    user.save(update_fields=["last_login"])
-
-                    # Serialize User Data
-                    user_data: dict[str, Any] = UserDetailSerializer(user).data
-
-                    # Attach Tokens
-                    user_data["access_token"] = cached_access_token
-                    user_data["refresh_token"] = cached_refresh_token
-
-                    # Record User Action Success And HTTP Metrics For 200
-                    duration_200: float = time.perf_counter() - start_time
-                    record_user_action(action_type="oauth_callback", success=True)
-                    record_http_request(
-                        method=request.method,
-                        endpoint=request.path,
-                        status_code=int(status.HTTP_200_OK),
-                        duration=duration_200,
-                    )
-
-                    # Record Callback Completion Success
-                    record_callback_complete_success()
-
-                    # Return Success Response
-                    return Response(
-                        data=user_data,
-                        status=status.HTTP_200_OK,
-                    )
-
-                # Return Error Response
-                duration_400_user: float = time.perf_counter() - start_time
-                record_user_action(action_type="oauth_callback", success=False)
-                record_http_request(
-                    method=request.method,
-                    endpoint=request.path,
-                    status_code=int(status.HTTP_400_BAD_REQUEST),
-                    duration=duration_400_user,
-                )
-
-                return Response(
-                    data={"error": "User Not Found"},
-                    status=status.HTTP_400_BAD_REQUEST,
+                # Handle Authenticated User
+                return self._handle_authenticated_user(
+                    request=request,
+                    with_metrics=True,
+                    start_time=start_time,
                 )
 
             # If Result Is A Dict
             if isinstance(result, dict):
-                # Get User
-                user = getattr(request, "user", None)
-
-                # If User Exists And User Is Authenticated
-                if user and user.is_authenticated:
-                    # Get Token Cache
-                    token_cache: BaseCache = caches["token_cache"]
-
-                    # Build User ID String
-                    user_id_str: str = str(user.id)
-
-                    # Build Cache Keys
-                    access_key: str = f"access_token_{user_id_str}"
-                    refresh_key: str = f"refresh_token_{user_id_str}"
-
-                    # Get Cached Tokens
-                    cached_access_token: str | None = token_cache.get(access_key)
-                    cached_refresh_token: str | None = token_cache.get(refresh_key)
-
-                    # Get Current Time
-                    now_dt: datetime.datetime = datetime.datetime.now(tz=datetime.UTC)
-
-                    # If Access Token Is Invalid
-                    if not _is_token_valid(
-                        cached_access_token,
-                        settings.ACCESS_TOKEN_SECRET,
-                        token_type="access",  # noqa: S106
-                    ):
-                        # Build Access Token Payload
-                        access_payload: dict[str, Any] = {
-                            "sub": user_id_str,
-                            "iss": slugify(settings.PROJECT_NAME),
-                            "aud": slugify(settings.PROJECT_NAME),
-                            "iat": now_dt,
-                            "exp": now_dt + datetime.timedelta(seconds=settings.ACCESS_TOKEN_EXPIRY),
-                        }
-
-                        # Generate New Access Token
-                        new_access_token: str = jwt.encode(
-                            payload=access_payload,
-                            key=settings.ACCESS_TOKEN_SECRET,
-                            algorithm="HS256",
-                        )
-
-                        # Cache New Access Token
-                        token_cache.set(
-                            access_key,
-                            new_access_token,
-                            timeout=settings.ACCESS_TOKEN_EXPIRY,
-                        )
-
-                        # Update Cached Access Token
-                        cached_access_token = new_access_token
-
-                    # If Refresh Token Is Invalid
-                    if not _is_token_valid(
-                        cached_refresh_token,
-                        settings.REFRESH_TOKEN_SECRET,
-                        token_type="refresh",  # noqa: S106
-                    ):
-                        # Build Refresh Token Payload
-                        refresh_payload: dict[str, Any] = {
-                            "sub": user_id_str,
-                            "iss": slugify(settings.PROJECT_NAME),
-                            "aud": slugify(settings.PROJECT_NAME),
-                            "iat": now_dt,
-                            "exp": now_dt + datetime.timedelta(seconds=settings.REFRESH_TOKEN_EXPIRY),
-                        }
-
-                        # Generate New Refresh Token
-                        new_refresh_token: str = jwt.encode(
-                            payload=refresh_payload,
-                            key=settings.REFRESH_TOKEN_SECRET,
-                            algorithm="HS256",
-                        )
-
-                        # Cache New Refresh Token
-                        token_cache.set(
-                            refresh_key,
-                            new_refresh_token,
-                            timeout=settings.REFRESH_TOKEN_EXPIRY,
-                        )
-
-                        # Update Cached Refresh Token
-                        cached_refresh_token = new_refresh_token
-
-                    # Update Last Login
-                    user.last_login = now_dt
-                    user.save(update_fields=["last_login"])
-
-                    # Serialize User Data
-                    user_data: dict[str, Any] = UserDetailSerializer(user).data
-
-                    # Attach Tokens
-                    user_data["access_token"] = cached_access_token
-                    user_data["refresh_token"] = cached_refresh_token
-
-                    # Record Callback Completion Success
-                    record_callback_complete_success()
-
-                    # Return Success Response
-                    return Response(
-                        data=user_data,
-                        status=status.HTTP_200_OK,
-                    )
-
-                # Return Error Response
-                return Response(
-                    data={"error": "User Not Found"},
-                    status=status.HTTP_400_BAD_REQUEST,
+                # Handle Authenticated User
+                return self._handle_authenticated_user(
+                    request=request,
+                    with_metrics=False,
+                    start_time=None,
                 )
 
             # Return Error Response
+            # Get Duration
             duration_400: float = time.perf_counter() - start_time
+
+            # Record User Action
             record_user_action(action_type="oauth_callback", success=False)
+
+            # Record HTTP Request
             record_http_request(
                 method=request.method,
                 endpoint=request.path,
@@ -512,6 +463,7 @@ class OAuthCallbackView(APIView):
                 duration=duration_400,
             )
 
+            # Return Error Response
             return Response(
                 data={"error": "Authentication Failed"},
                 status=status.HTTP_400_BAD_REQUEST,
@@ -532,6 +484,8 @@ class OAuthCallbackView(APIView):
 
             # Record HTTP Request Metrics
             duration_500: float = time.perf_counter() - start_time
+
+            # Record HTTP Request
             record_http_request(
                 method=request.method,
                 endpoint=request.path,
@@ -539,7 +493,7 @@ class OAuthCallbackView(APIView):
                 duration=duration_500,
             )
 
-            # Record User Action Failure
+            # Record User Action
             record_user_action(action_type="oauth_callback", success=False)
 
             # Return Internal Server Error Response

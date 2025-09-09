@@ -1,7 +1,8 @@
-# ruff: noqa: PLR2004
-
 # Standard Library Imports
 from typing import TYPE_CHECKING
+
+# Third Party Imports
+import pytest
 
 # Local Imports
 from apps.system.serializers.health_serializer import HealthResponseSerializer
@@ -55,9 +56,9 @@ def test_valid_payload() -> None:
     assert data["version"] == "0.1.0"
     assert data["environment"] == "production"
     assert data["system"]["hostname"] == "host-1"
-    assert data["system"]["cpu_percent"] == 15.5
-    assert data["system"]["memory"]["percent"] == 25.0
-    assert data["system"]["disk"]["percent"] == 50.0
+    assert data["system"]["cpu_percent"] == pytest.approx(expected=15.5, rel=1e-6)
+    assert data["system"]["memory"]["percent"] == pytest.approx(expected=25.0, rel=1e-6)
+    assert data["system"]["disk"]["percent"] == pytest.approx(expected=50.0, rel=1e-6)
 
 
 # Test Missing Status Fails With Required Message

@@ -1,12 +1,14 @@
 # ruff: noqa: PLC0415
 
 # Standard Library Imports
+import json
 import logging
 from collections.abc import Iterable
 from typing import Any
 
 # Third Party Imports
 from django.apps import AppConfig
+from django.core.serializers.json import DjangoJSONEncoder
 from django.utils.translation import gettext_lazy as _
 from health_check.plugins import plugin_dir
 
@@ -29,8 +31,7 @@ class CommonConfig(AppConfig):
         """
         Register Health Check Backends And Apply Silk Patches.
         """
-
-        # Apply Silk Patches To Fix JSON Serialization Issues
+        # Apply Silk Patches
         self._patch_silk_json_handling()
 
         # Local Imports
@@ -49,207 +50,259 @@ class CommonConfig(AppConfig):
         plugin_dir.register(RedisHealthCheck)
 
     # Patch Silk JSON Handling
-    def _patch_silk_json_handling(self) -> None:  # noqa: C901, PLR0915
+    def _patch_silk_json_handling(self) -> None:
         """
         Patch Silk JSON Handling To Prevent Jsonb Serialization Issues.
         """
 
         try:
-            # Standard Library Imports
-            import json
-
             # Third Party Imports
-            from django.core.serializers.json import DjangoJSONEncoder
-
-            # Monkey Patch Force Str Fallback
-            def patched_force_str_with_fallback(param: object) -> str:  # noqa: C901, PLR0911
-                """
-                Convert Arbitrary Parameter To String With JSON Safety.
-
-                Args:
-                    param (object): Arbitrary Parameter To Convert.
-
-                Returns:
-                    str: Converted String Representation.
-                """
-
-                # If Adapted Attribute Exists
-                if hasattr(param, "adapted"):
-                    # If Adapted Has Dumps Method
-                    if hasattr(param.adapted, "dumps"):
-                        try:
-                            # Try To Serialize Using Adapted Object
-                            return param.adapted.dumps(param.adapted.adapted)
-
-                        except Exception:
-                            # Create Log Message
-                            log_message: str = f"Failed To Serialize Adapted Object: {param.adapted}"
-
-                            # Log Exception
-                            logger.exception(log_message)
-
-                    # If Adapted Is Dict Or List
-                    elif isinstance(param.adapted, (dict, list)):
-                        # Serialize Using JSON Encoder
-                        return json.dumps(param.adapted, cls=DjangoJSONEncoder)
-
-                    else:
-                        # Return String Representation
-                        return str(param.adapted)
-
-                # If Param Is Dict Or List
-                if isinstance(param, (dict, list)):
-                    # Serialize Using JSON Encoder
-                    return json.dumps(param, cls=DjangoJSONEncoder)
-
-                # If Param Has Class And JSONB In Class Name
-                if hasattr(param, "__class__") and "jsonb" in param.__class__.__name__.lower():
-                    try:
-                        # If Param Has Obj Attribute
-                        if hasattr(param, "obj"):
-                            # Serialize Using JSON Encoder
-                            return json.dumps(param.obj, cls=DjangoJSONEncoder)
-
-                        # If Param Has Data Attribute
-                        if hasattr(param, "data"):
-                            # Serialize Using JSON Encoder
-                            return json.dumps(param.data, cls=DjangoJSONEncoder)
-
-                    except Exception:
-                        # Create Log Message
-                        log_message: str = f"Failed To Serialize JSONB Object: {param}"
-
-                        # Log Exception
-                        logger.exception(log_message)
-
-                try:
-                    # Third Party Import
-                    from silk.utils.encoding import force_str  # pyright: ignore[reportMissingImports]
-
-                    # Return Force Str Result
-                    return force_str(param)
-
-                except ImportError:
-                    # Return String Representation
-                    return str(param)
-
-            # Third Party Import
             import silk.sql
 
-            # Apply Force Str Fallback Patch
-            silk.sql.force_str_with_fallback = patched_force_str_with_fallback
+            # Patch Force Str
+            self._patch_force_str(silk.sql)
 
-            # Patch Explain Query Safely
-            def patched_explain_query(
-                connection: Any,
-                query: str,
-                params: Iterable[object],
-            ) -> list[tuple] | None:
-                """
-                Execute EXPLAIN With Safe JSON Parameter Handling.
-
-                Args:
-                    connection (Any): Database Connection Object.
-                    query (str): SQL Query String Without EXPLAIN Prefix.
-                    params (Iterable[object]): SQL Parameters For The Query.
-
-                Returns:
-                    list[tuple] | None: Result Rows Or None If Failed.
-                """
-
-                try:
-                    # Initialize Safe Params List
-                    safe_params: list[object] = []
-
-                    # Iterate Over Params
-                    for param in params:
-                        # Check If Param Is Jsonb Object
-                        if hasattr(param, "__class__") and "jsonb" in param.__class__.__name__.lower():
-                            try:
-                                # If Param Has Obj Attribute
-                                if hasattr(param, "obj"):
-                                    # Append JSON-Encoded Obj
-                                    safe_params.append(json.dumps(param.obj, cls=DjangoJSONEncoder))
-
-                                else:
-                                    # Append Empty JSON Fallback
-                                    safe_params.append(str(param.obj) if hasattr(param, "obj") else "{}")
-
-                            except Exception:
-                                # Create Log Message
-                                log_message: str = f"Failed To Sanitize JSONB Param: {param}"
-
-                                # Log Exception
-                                logger.exception(log_message)
-
-                                # Append Empty JSON Fallback
-                                safe_params.append("{}")
-
-                        # Check If Param Is Dict Or List
-                        elif isinstance(param, (dict, list)):
-                            # Append JSON-Encoded Dict/List
-                            safe_params.append(json.dumps(param, cls=DjangoJSONEncoder))
-
-                        # Check If Param Has Adapted Attribute
-                        elif hasattr(param, "adapted"):
-                            # Check If Adapted Is Dict Or List
-                            if isinstance(param.adapted, (dict, list)):
-                                # Append JSON-Encoded Adapted Value
-                                safe_params.append(json.dumps(param.adapted, cls=DjangoJSONEncoder))
-
-                            else:
-                                # Append String Adapted Value
-                                safe_params.append(str(param.adapted))
-
-                        else:
-                            # Append Raw Param
-                            safe_params.append(param)
-
-                    with connection.cursor() as cur:
-                        # Build EXPLAIN-Prefixed Query
-                        prefixed_query: str = f"EXPLAIN {query}"
-
-                        # Debug Log Execution Details
-                        logger.debug(
-                            "Executing EXPLAIN Query",
-                            extra={
-                                "query": prefixed_query,
-                                "params": safe_params,
-                            },
-                        )
-
-                        # Execute EXPLAIN Statement
-                        cur.execute(prefixed_query, tuple(safe_params))
-
-                        # Fetch All Rows
-                        return cur.fetchall()
-
-                except Exception:
-                    # Create Log Message
-                    log_message: str = "EXPLAIN Query Failed; Returning None To Preserve Flow"
-
-                    # Log Exception
-                    logger.exception(log_message)
-
-                    # Silently Fail EXPLAIN Queries To Avoid Breaking The Main Flow
-                    return None
-
-            # Apply Explain Query Patch
-            silk.sql._explain_query = patched_explain_query  # noqa: SLF001
+            # Patch Explain Query
+            self._patch_explain_query(silk.sql)
 
         except ImportError:
             # Create Log Message
-            log_message: str = "Silk Not Installed; Skipping EXPLAIN Query Patch"
+            log_message: str = "Silk Not Installed; Skipping JSON Handling Patch"
 
             # Log Exception
             logger.exception(log_message)
 
         except Exception:
             # Create Log Message
-            log_message: str = "EXPLAIN Query Patch Failed; Continuing Without Patch"
+            log_message: str = "JSON Handling Patch Failed; Continuing Without Patch"
 
             # Log Exception
             logger.exception(log_message)
+
+    # Patch Force Str
+    def _patch_force_str(self, sql_module: Any) -> None:
+        """
+        Patch Silk's force_str Function To Handle JSONB Serialization.
+
+        Args:
+            sql_module (Any): Silk SQL Module To Patch.
+        """
+
+        # Force Str With Fallback
+        def force_str_with_fallback(param: object) -> str:
+            """
+            Convert Parameter To String With JSON Safety.
+
+            Args:
+                param (object): Parameter To Convert.
+
+            Returns:
+                str: Converted String Representation.
+            """
+            # Serialize Parameter
+            serialized = self._serialize_param(param)
+
+            # If Serialized Is Not None
+            if serialized is not None:
+                # Return Serialized
+                return serialized
+
+            try:
+                # Third Party Imports
+                from silk.utils.encoding import force_str  # pyright: ignore[reportMissingImports]
+
+                # Return Force Str
+                return force_str(param)
+
+            except ImportError:
+                # Return String
+                return str(param)
+
+        # Patch Force Str With Fallback
+        sql_module.force_str_with_fallback = force_str_with_fallback
+
+    # Serialize Parameter
+    def _serialize_param(self, param: object) -> str | None:
+        """
+        Attempt To Serialize Parameter To JSON String.
+
+        Args:
+            param (object): Parameter To Serialize.
+
+        Returns:
+            str | None: JSON String Or None If Serialization Fails.
+        """
+
+        # If Param Has Adapted Attribute
+        if hasattr(param, "adapted"):
+            # Return Serialized Adapted
+            return self._serialize_adapted(param.adapted)
+
+        # If Param Is Dict Or List
+        if isinstance(param, (dict, list)):
+            # Return JSON-Encoded Dict/List
+            return json.dumps(param, cls=DjangoJSONEncoder)
+
+        # If Param Has Class And Jsonb In Class Name
+        if hasattr(param, "__class__") and "jsonb" in param.__class__.__name__.lower():
+            # Return Serialized JSONB
+            return self._serialize_jsonb(param)
+
+        # Return None
+        return None
+
+    # Serialize Adapted
+    def _serialize_adapted(self, adapted: Any) -> str | None:
+        """
+        Serialize Adapted Object.
+
+        Args:
+            adapted (Any): Adapted Object To Serialize.
+
+        Returns:
+            str | None: JSON String Or None If Serialization Fails.
+        """
+
+        try:
+            # If Adapted Has Dumps Attribute
+            if hasattr(adapted, "dumps"):
+                # Return Serialized Adapted
+                return adapted.dumps(adapted.adapted)
+
+            # If Adapted Is Dict Or List
+            if isinstance(adapted, (dict, list)):
+                # Return JSON-Encoded Dict/List
+                return json.dumps(adapted, cls=DjangoJSONEncoder)
+
+            # Return String
+            return str(adapted)
+
+        except Exception:
+            # Create Log Message
+            log_message: str = f"Failed To Serialize Adapted Object: {adapted}"
+
+            # Log Exception
+            logger.exception(log_message)
+
+            # Return None
+            return None
+
+    # Serialize JSONB
+    def _serialize_jsonb(self, param: Any) -> str | None:
+        """
+        Serialize JSONB Object.
+
+        Args:
+            param (Any): JSONB Object To Serialize.
+
+        Returns:
+            str | None: JSON String Or None If Serialization Fails.
+        """
+
+        try:
+            # If Param Has Obj Attribute
+            if hasattr(param, "obj"):
+                # Return JSON-Encoded Obj
+                return json.dumps(param.obj, cls=DjangoJSONEncoder)
+
+            # If Param Has Data Attribute
+            if hasattr(param, "data"):
+                # Return JSON-Encoded Data
+                return json.dumps(param.data, cls=DjangoJSONEncoder)
+
+        except Exception:
+            # Create Log Message
+            log_message: str = f"Failed To Serialize JSONB Object: {param}"
+
+            # Log Exception
+            logger.exception(log_message)
+
+        # Return None
+        return None
+
+    # Patch Explain Query
+    def _patch_explain_query(self, sql_module: Any) -> None:
+        """
+        Patch Silk's Explain Query Function For Safe JSON Handling.
+
+        Args:
+            sql_module (Any): Silk SQL Module To Patch.
+        """
+
+        # Explain Query
+        def explain_query(connection: Any, query: str, params: Iterable[object]) -> list[tuple] | None:
+            """
+            Execute EXPLAIN With Safe JSON Parameter Handling.
+
+            Args:
+                connection (Any): Database Connection Object.
+                query (str): SQL Query String Without EXPLAIN Prefix.
+                params (Iterable[object]): SQL Parameters For The Query.
+
+            Returns:
+                list[tuple] | None: Result Rows Or None If Failed.
+            """
+
+            try:
+                # Sanitize Parameters
+                safe_params = [self._sanitize_param(param) for param in params]
+
+                # With Connection Cursor
+                with connection.cursor() as cur:
+                    # Prefixed Query
+                    prefixed_query: str = f"EXPLAIN {query}"
+
+                    # Log Debug
+                    logger.debug(
+                        "Executing EXPLAIN Query",
+                        extra={"query": prefixed_query, "params": safe_params},
+                    )
+
+                    # Execute Query
+                    cur.execute(prefixed_query, tuple(safe_params))
+
+                    # Return Fetched All
+                    return cur.fetchall()
+
+            except Exception:
+                # Create Log Message
+                log_message: str = "EXPLAIN Query Failed; Returning None To Preserve Flow"
+
+                # Log Exception
+                logger.exception(log_message)
+
+                # Return None
+                return None
+
+        # Patch Explain Query
+        sql_module._explain_query = explain_query  # noqa: SLF001
+
+    # Sanitize Parameter
+    def _sanitize_param(self, param: object) -> object:
+        """
+        Sanitize Parameter For Safe SQL Execution.
+
+        Args:
+            param (object): Parameter To Sanitize.
+
+        Returns:
+            object: Sanitized Parameter.
+        """
+        # Serialize Parameter
+        serialized = self._serialize_param(param)
+
+        # If Serialized Is Not None
+        if serialized is not None:
+            # Return Serialized
+            return serialized
+
+        # If Param Has Adapted Attribute
+        if hasattr(param, "adapted"):
+            # Return String Adapted
+            return str(param.adapted)
+
+        # Return Param
+        return param
 
 
 # Exports

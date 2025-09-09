@@ -2,6 +2,7 @@
 import logging
 import ssl
 from pathlib import Path
+from typing import Any
 
 # Third Party Imports
 import environ
@@ -534,13 +535,15 @@ CELERY_TIMEZONE: str = TIME_ZONE
 CELERY_BROKER_URL: str = RABBITMQ_URL
 
 # Set The Celery Broker Use SSL
-CELERY_BROKER_USE_SSL: bool = {"ssl_cert_reqs": ssl.CERT_NONE} if RABBITMQ_URL.startswith("amqps://") else None
+CELERY_BROKER_USE_SSL: dict[str, Any] | None = (
+    {"ssl_cert_reqs": ssl.CERT_NONE} if RABBITMQ_URL.startswith("amqps://") else None
+)
 
 # Set The Celery Result Backend
 CELERY_RESULT_BACKEND: str = ELASTICSEARCH_URL
 
 # Set The Celery Redis Backend Use SSL
-CELERY_REDIS_BACKEND_USE_SSL: bool = CELERY_BROKER_USE_SSL
+CELERY_REDIS_BACKEND_USE_SSL: dict[str, Any] | None = CELERY_BROKER_USE_SSL
 
 # Set The Celery Result Extended
 CELERY_RESULT_EXTENDED: bool = True
@@ -724,10 +727,13 @@ STATIC_URL: str = f"{AWS_S3_URL_PROTOCOL}//{AWS_S3_DOMAIN}/static/"
 # Set The CollectFASTA Strategy
 COLLECTFASTA_STRATEGY: str = "collectfasta.strategies.boto3.Boto3Strategy"
 
+# Set The AWS S3 Storage Backend
+AWS_S3_STORAGE_BACKEND: str = "storages.backends.s3.S3Storage"
+
 # Set The Storages
 STORAGES: dict[str, dict[str, str]] = {
     "default": {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": AWS_S3_STORAGE_BACKEND,
         "OPTIONS": {
             "location": "media",
             "file_overwrite": False,
@@ -737,7 +743,7 @@ STORAGES: dict[str, dict[str, str]] = {
         },
     },
     "staticfiles": {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": AWS_S3_STORAGE_BACKEND,
         "OPTIONS": {
             "location": "static",
             "default_acl": "public-read",
@@ -748,7 +754,7 @@ STORAGES: dict[str, dict[str, str]] = {
         },
     },
     "media": {
-        "BACKEND": "storages.backends.s3.S3Storage",
+        "BACKEND": AWS_S3_STORAGE_BACKEND,
         "OPTIONS": {
             "location": "media",
             "default_acl": "public-read",
