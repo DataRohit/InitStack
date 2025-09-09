@@ -78,7 +78,7 @@ help:
 # Sonar-Scan Target: Run SonarQube Analysis
 sonar-scan:
 	@echo ""
-	@printf "${YELLOW}Starting Sonarscanner...${NC}\n"
+	@printf "${YELLOW}Starting SonarScanner...${NC}\n"
 	@if [ -f .env ]; then \
 		export $$(cat .env | grep -v '^#' | xargs) && \
 		[ -n "$$SONAR_TOKEN" ] || (printf "${RED}SONAR_TOKEN Is Not Set. Check Your .env File.${NC}\n"; exit 1) && \
