@@ -1,0 +1,152 @@
+name: CI
+
+env:
+    DOCKER_BUILDKIT: 1
+    COMPOSE_DOCKER_CLI_BUILD: 1
+
+on:
+    pull_request:
+        branches: ["master"]
+    push:
+        branches: ["master"]
+
+concurrency:
+    group: ${{ github.head_ref || github.run_id }}
+    cancel-in-progress: true
+
+jobs:
+    linter:
+        runs-on: ubuntu-latest
+        steps:
+            - name: Checkout Code Repository
+              uses: actions/checkout@v5
+
+            - name: Set Up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version-file: ".python-version"
+
+            - name: Run pre-commit
+              uses: pre-commit/action@v3.0.1
+
+    pytest:
+        runs-on: ubuntu-latest
+
+        services:
+            redis:
+                image: redis:6
+                ports:
+                    - 6379:6379
+                options: --requirepass WFyzhcO3ByZIjdd
+
+            postgres:
+                image: postgres:17
+                ports:
+                    - 5432:5432
+                env:
+                    POSTGRES_PASSWORD: jqxipLMtuCO3gPq
+                    POSTGRES_USER: xgg3HtoYRw2LUT4
+                    POSTGRES_DB: initstack
+
+        env:
+            REDIS_URL: "redis://:WFyzhcO3ByZIjdd@localhost:6379/0"
+            DATABASE_URL: "postgres://xgg3HtoYRw2LUT4:jqxipLMtuCO3gPq@localhost:5432/initstack"
+            CELERY_BROKER_URL: "amqp://NGeDFwAgoZwmMvP:ftT4tT0Qy2cQXGm@localhost:5672/"
+            ELASTICSEARCH_URL: "elasticsearch://elastic:KBReYFzIVHVGiHk@localhost:9200/celery_results"
+            DJANGO_AWS_ACCESS_KEY_ID: "MD9xH0gT3bD7usp1qZpr"
+            DJANGO_AWS_SECRET_ACCESS_KEY: "DQ0uEKEfpo6zdwC0zaiXjpznkaCM1rk6xZOEL2bW"
+            DJANGO_AWS_STORAGE_BUCKET_NAME: "initstack"
+            DJANGO_AWS_S3_ENDPOINT_URL: "http://localhost:9000"
+            OTEL_EXPORTER_OTLP_ENDPOINT: "http://localhost:4318"
+            OTEL_SERVICE_NAME: "django-service"
+            OTEL_SERVICE_NAMESPACE: "initstack"
+            OTEL_SERVICE_ENVIRONMENT: "development"
+            OTEL_SERVICE_VERSION: "0.1.0"
+            OTEL_SERVICE_INSTANCE_ID: "bc956360-9e1e-40e5-b35e-361fb9b87ecc"
+            JAEGER_QUERY_URL: "http://localhost:16686"
+            PROMETHEUS_URL: "http://localhost:9090"
+            ACTIVATION_TOKEN_SECRET: "63cd9a95c22f038a141df8434422a7065e0b376957e1ec331725f68246d19994"
+            ACTIVATION_TOKEN_EXPIRY: "1800"
+            ACCESS_TOKEN_SECRET: "5a31c25584d38c02c0f44b29f28575d9199aaecac6072d3fd1115814441ea85b"
+            ACCESS_TOKEN_EXPIRY: "3600"
+            REFRESH_TOKEN_SECRET: "8cbf50ee740abf10f9d0f5f0f6d597b48723abec723203fc1e6c63b91c8b2263"
+            REFRESH_TOKEN_EXPIRY: "21600"
+            CHANGE_USERNAME_TOKEN_SECRET: "f2552c358027c8dba9706eb69f45f8b259c7e5a49a426dc7e859fb6a4e51593a"
+            CHANGE_USERNAME_TOKEN_EXPIRY: "1800"
+            CHANGE_EMAIL_TOKEN_SECRET: "49800ffbb7957074bfe0bd90acbf8b70c7d68cb7074a5e3a1f15008caf728c5e"
+            CHANGE_EMAIL_TOKEN_EXPIRY: "1800"
+            DEACTIVATION_TOKEN_SECRET: "8cf1b6d2df7a055bb09fcc94a2ff75a3b95825fd589cff162e733386c2c79451"
+            DEACTIVATION_TOKEN_EXPIRY: "1800"
+            REACTIVATION_TOKEN_SECRET: "e4ad915cf40758e630d3d37291b48697b62585e0d4a48e83c2427f84b52a61f2"
+            REACTIVATION_TOKEN_EXPIRY: "1800"
+            DELETION_TOKEN_SECRET: "775362bd6de0552f9b5ab4391681a980b1738db451ed2a81bcfad927a78cc088"
+            DELETION_TOKEN_EXPIRY: "1800"
+            RESET_PASSWORD_TOKEN_SECRET: "029ed52b4c5d39356944ed59c5dbc89ba84ada153255c75e845abdcf181e317c"
+            RESET_PASSWORD_TOKEN_EXPIRY: "1800"
+            SOCIAL_AUTH_GOOGLE_OAUTH2_KEY: ""
+            SOCIAL_AUTH_GOOGLE_OAUTH2_SECRET: ""
+            SOCIAL_AUTH_GITHUB_KEY: ""
+            SOCIAL_AUTH_GITHUB_SECRET: ""
+            DJANGO_SETTINGS_MODULE: "config.settings"
+            DJANGO_DEBUG: "True"
+            DJANGO_TEMPLATES_DEBUG: "True"
+            DJANGO_SECRET_KEY: "ofem&p9js4_b%yde%)t@pwy!0=z2&3uylejc3xoowbn7-jtx9z#bt=#k+u)7hk*3@s4f_n)64^d7u)#0&xj09s)0op%)x1&9jcle"
+            DJANGO_ALLOWED_HOSTS: "localhost,127.0.0.1,0.0.0.0"
+            DJANGO_TIME_ZONE: "Asia/Kolkata"
+            DJANGO_ADMIN_URL: "admin/"
+            DJANGO_SECURE_SSL_REDIRECT: "False"
+            DJANGO_SESSION_COOKIE_SECURE: "False"
+            DJANGO_CSRF_COOKIE_SECURE: "False"
+            DJANGO_CSRF_TRUSTED_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080,http://0.0.0.0:8080,http://localhost:8000,http://127.0.0.1:8000,http://0.0.0.0:8000"
+            DJANGO_SECURE_HSTS_INCLUDE_SUBDOMAINS: "False"
+            DJANGO_SECURE_HSTS_PRELOAD: "False"
+            DJANGO_SECURE_CONTENT_TYPE_NOSNIFF: "False"
+            DJANGO_CORS_ALLOWED_ORIGINS: "http://localhost:8080,http://127.0.0.1:8080,http://0.0.0.0:8080,http://localhost:8000,http://127.0.0.1:8000,http://0.0.0.0:8000"
+            DJANGO_EMAIL_BACKEND: "djcelery_email.backends.CeleryEmailBackend"
+            DJANGO_EMAIL_HOST: "mailpit-service"
+            DJANGO_EMAIL_PORT: "1025"
+            DEFAULT_FROM_EMAIL: "InitStack <datarohit@outlook.com>"
+            DJANGO_SERVER_EMAIL: "InitStack <datarohit@outlook.com>"
+            DJANGO_EMAIL_SUBJECT_PREFIX: "[InitStack]"
+            REDIS_DEFAULT_URL: "redis://:WFyzhcO3ByZIjdd@localhost:6379/0"
+            REDIS_TOKEN_CACHE_URL: "redis://:WFyzhcO3ByZIjdd@localhost:6379/1"
+            RABBITMQ_URL: "amqp://NGeDFwAgoZwmMvP:ftT4tT0Qy2cQXGm@localhost:5672/"
+            DJANGO_AWS_S3_MAX_MEMORY_SIZE: "104_857_600"
+            DJANGO_AWS_S3_REGION_NAME: "ap-south-1"
+            DJANGO_AWS_S3_USE_SSL: "False"
+            DJANGO_AWS_S3_URL_PROTOCOL: "http:"
+            DJANGO_SENTRY_DSN: "https://9f12b3c48e5d4a12b7c9d8f6a1b2c3d4@o4839201827364550.ingest.us.sentry.io/4938274650192837"
+            DJANGO_SENTRY_LOG_LEVEL: "20"
+            SENTRY_ENVIRONMENT: "development"
+            SENTRY_TRACES_SAMPLE_RATE: "0.0"
+            SPAN_STORAGE_TYPE: "elasticsearch"
+            JAEGER_ES_PASSWORD: "KBReYFzIVHVGiHk"
+            JAEGER_ES_SERVER_URLS: "http://localhost:9200"
+            METRICS_STORAGE_TYPE: "prometheus"
+            PROMETHEUS_SERVER_URL: "http://localhost:8889"
+
+        steps:
+            - name: Checkout Code Repository
+              uses: actions/checkout@v5
+
+            - name: Install uv
+              uses: astral-sh/setup-uv@v5
+              with:
+                  enable-cache: "true"
+
+            - name: Set Up Python
+              uses: actions/setup-python@v6
+              with:
+                  python-version-file: ".python-version"
+
+            - name: Install Dependencies
+              run: uv sync --locked
+
+            - name: Check DB Migrations
+              run: uv run python manage.py makemigrations --check
+
+            - name: Run DB Migrations
+              run: uv run python manage.py migrate
+
+            - name: Test With PyTest
+              run: uv run pytest
