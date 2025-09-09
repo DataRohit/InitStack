@@ -4,11 +4,15 @@ import sys
 from pathlib import Path
 
 # Third Party Imports
+from channels.auth import AuthMiddlewareStack
+from channels.routing import ProtocolTypeRouter
+from channels.routing import URLRouter
 from django.core.asgi import get_asgi_application
 from django.core.handlers.asgi import ASGIHandler
 from sentry_sdk.integrations.asgi import SentryAsgiMiddleware
 
 # Local Imports
+from apps.chat.routing import websocket_urlpatterns
 from config.opentelemetry import configure_opentelemetry
 
 # Set The Project Base Directory
@@ -27,7 +31,15 @@ os.environ.setdefault(
 configure_opentelemetry()
 
 # Get The ASGI Application
-application: ASGIHandler = SentryAsgiMiddleware(app=get_asgi_application())
+django_application: ASGIHandler = SentryAsgiMiddleware(app=get_asgi_application())
+
+# Main ASGI Application Function
+application: ProtocolTypeRouter = ProtocolTypeRouter(
+    {
+        "http": django_application,
+        "websocket": AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
+    },
+)
 
 # Exports
-__all__: list[str] = ["application"]
+__all__: list[str] = ["application", "django_application"]

@@ -124,6 +124,7 @@ DJANGO_APPS: list[str] = [
 
 # Set The Third Party Apps
 THIRD_PARTY_APPS: list[str] = [
+    "channels",
     "collectfasta",
     "corsheaders",
     "djcelery_email",
@@ -132,20 +133,21 @@ THIRD_PARTY_APPS: list[str] = [
     "drf_spectacular",
     "drf_spectacular_sidecar",
     "health_check",
-    "health_check.db",
     "health_check.cache",
-    "health_check.storage",
-    "health_check.contrib.migrations",
     "health_check.contrib.celery",
     "health_check.contrib.celery_ping",
-    "health_check.contrib.psutil",
-    "health_check.contrib.s3boto3_storage",
-    "health_check.contrib.rabbitmq",
     "health_check.contrib.db_heartbeat",
+    "health_check.contrib.migrations",
+    "health_check.contrib.psutil",
+    "health_check.contrib.rabbitmq",
+    "health_check.contrib.s3boto3_storage",
+    "health_check.db",
+    "health_check.storage",
     "rest_framework",
     "silk",
     "social_django",
 ]
+
 
 # Set The Local Apps
 LOCAL_APPS: list[str] = [
@@ -153,10 +155,11 @@ LOCAL_APPS: list[str] = [
     "apps.system",
     "apps.users",
     "apps.oauth",
+    "apps.chat",
 ]
 
 # Set The Apps
-INSTALLED_APPS: list[str] = DJANGO_APPS + THIRD_PARTY_APPS + LOCAL_APPS
+INSTALLED_APPS: list[str] = ["daphne", *DJANGO_APPS, *THIRD_PARTY_APPS, *LOCAL_APPS]
 
 # Set The Redis Default URL
 REDIS_DEFAULT_URL: str = env.str(
@@ -168,6 +171,12 @@ REDIS_DEFAULT_URL: str = env.str(
 REDIS_TOKEN_CACHE_URL: str = env.str(
     var="REDIS_TOKEN_CACHE_URL",
     default="redis://:WFyzhcO3ByZIjdd@redis-service:6379/1",
+)
+
+# Set The Redis WebSocket Channels URL
+REDIS_WEBSOCKET_CHANNELS_URL: str = env.str(
+    var="REDIS_WEBSOCKET_CHANNELS_URL",
+    default="redis://:WFyzhcO3ByZIjdd@redis-service:6379/2",
 )
 
 # Set The RabbitMQ URL
@@ -950,3 +959,13 @@ RESET_PASSWORD_TOKEN_EXPIRY: int = env.int(
     var="RESET_PASSWORD_TOKEN_EXPIRY",
     default=1800,
 )
+
+# Channels
+CHANNEL_LAYERS: dict[str, dict[str, dict[str, list[str]]]] = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_WEBSOCKET_CHANNELS_URL],
+        },
+    },
+}
